@@ -4,9 +4,9 @@ import POSApp from './POSApp';
 
 const App = () => {
   const hostname = window.location.hostname;
+  const port = window.location.port;
   
-  // If the subdomain starts with 'pos.' or is 'pos.localhost', we route to the POS app.
-  const isPOSDomain = hostname.startsWith('pos.') || hostname === 'pos.localhost';
+  const isPOSDomain = hostname.startsWith('pos.') || hostname === 'pos.localhost' || port === '3001';
 
   if (isPOSDomain) {
     return <POSApp />;
