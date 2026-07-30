@@ -5,8 +5,6 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Create reusable transporter object using the default SMTP transport
-// NOTE: For testing without email setup, we will just log the OTP.
 let transporter;
 try {
   transporter = nodemailer.createTransport({
@@ -24,8 +22,7 @@ try {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    // First check hardcoded admin fallback if no admin in DB
+   
     if (username === 'admin' && password === 'admin123') {
       const adminExists = await User.findOne({ username: 'admin' });
       if (!adminExists) {
