@@ -26,8 +26,6 @@ router.get('/stats', async (req, res) => {
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    // Weekly/Monthly sales data for Line Chart
-    // Here we'll group by date string for simplicity. A production app would use proper date aggregation.
     const salesOverTime = {};
     orders.forEach(order => {
       const dateStr = order.date.toISOString().split('T')[0]; // YYYY-MM-DD
