@@ -13,7 +13,9 @@ import Settings from './pages/Settings';
 import { getInventory } from './api';
 
 const AdminApp = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('adminLoggedIn') === 'true';
+  });
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +45,7 @@ const AdminApp = () => {
     e.preventDefault();
     if (username === 'admin' && password === 'admin123') {
       setIsLoggedIn(true);
+      localStorage.setItem('adminLoggedIn', 'true');
       setLoginError('');
     } else {
       setLoginError('Invalid username or password');
@@ -51,6 +54,7 @@ const AdminApp = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('adminLoggedIn');
     setUsername('');
     setPassword('');
   };
