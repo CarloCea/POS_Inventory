@@ -8,7 +8,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
   
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('add'); // 'add', 'restock', 'edit'
+  const [modalType, setModalType] = useState('add');
   
   // Settings state
   const [enableNotifications, setEnableNotifications] = useState(true);

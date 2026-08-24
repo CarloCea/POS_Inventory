@@ -5,8 +5,6 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Create reusable transporter object using the default SMTP transport
-// NOTE: For testing without email setup, we will just log the OTP.
 let transporter;
 try {
   transporter = nodemailer.createTransport({
@@ -25,7 +23,6 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // First check hardcoded admin fallback if no admin in DB
     if (username === 'admin' && password === 'admin123') {
       const adminExists = await User.findOne({ username: 'admin' });
       if (!adminExists) {
@@ -61,7 +58,7 @@ router.post('/forgot-password', async (req, res) => {
     // Generate 6 digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Set OTP and expiry (15 mins)
+    // Set OTP and expiry
     user.resetPasswordOtp = otp;
     user.otpExpiry = Date.now() + 15 * 60 * 1000;
     await user.save();
@@ -74,7 +71,7 @@ router.post('/forgot-password', async (req, res) => {
           from: '"Sari-Sari Inventory" <noreply@sarisari.com>',
           to: email,
           subject: 'Password Reset OTP',
-          text: `Your OTP for password reset is: ${otp}. It expires in 15 minutes.`,
+          text: `Your OTP for password reset is: ${otp}. It will expire in 15 minutes.`,
         });
         console.log(`OTP sent via email to ${email}`);
       } catch (emailErr) {

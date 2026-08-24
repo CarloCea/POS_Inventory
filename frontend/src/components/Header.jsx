@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, LogOut, LayoutDashboard, Package, TrendingUp, Monitor, Settings as SettingsIcon, Menu, X } from 'lucide-react';
+import { ShoppingCart, LogOut, LayoutDashboard, Package, TrendingUp, Settings as SettingsIcon, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Header = ({ handleLogout }) => {

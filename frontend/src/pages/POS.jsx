@@ -20,7 +20,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     setCart(prev => {
       const existing = prev.find(item => item._id === product._id);
       if (existing) {
-        if (existing.cartQuantity >= product.quantity) return prev; // Cannot add more than stock
+        if (existing.cartQuantity >= product.quantity) return prev;
         return prev.map(item => 
           item._id === product._id ? { ...item, cartQuantity: item.cartQuantity + 1 } : item
         );
@@ -126,7 +126,6 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
               </div>
             </div>
 
-            {/* Vertical Grid: 4 Columns, Unlimited Rows */}
             <div className="p-2 sm:p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-4 gap-2 sm:gap-4 content-start">
               {filteredInventory.map(item => (
                 <button

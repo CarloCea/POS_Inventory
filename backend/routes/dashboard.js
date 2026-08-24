@@ -12,7 +12,6 @@ router.get('/stats', async (req, res) => {
     const totalSales = orders.reduce((sum, order) => sum + (order.totalSales || 0), 0);
     const totalProfit = orders.reduce((sum, order) => sum + (order.totalProfit || 0), 0);
 
-    // Group sales by product for Pie Chart
     const salesByProduct = {};
     orders.forEach(order => {
       order.items.forEach(item => {
@@ -26,11 +25,10 @@ router.get('/stats', async (req, res) => {
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    // Weekly/Monthly sales data for Line Chart
-    // Here we'll group by date string for simplicity. A production app would use proper date aggregation.
+
     const salesOverTime = {};
     orders.forEach(order => {
-      const dateStr = order.date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dateStr = order.date.toISOString().split('T')[0]; 
       if (!salesOverTime[dateStr]) salesOverTime[dateStr] = { date: dateStr, sales: 0, profit: 0 };
       salesOverTime[dateStr].sales += (order.totalSales || 0);
       salesOverTime[dateStr].profit += (order.totalProfit || 0);

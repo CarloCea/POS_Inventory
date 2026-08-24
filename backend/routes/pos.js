@@ -5,7 +5,7 @@ const Order = require('../models/Order');
 
 // Process POS checkout
 router.post('/checkout', async (req, res) => {
-  const { items, totalAmount, cashier } = req.body; // Note: totalAmount here might be used for validation, we'll recalculate
+  const { items, totalAmount, cashier } = req.body; 
   
   if (!items || items.length === 0) {
     return res.status(400).json({ message: 'No items provided' });
@@ -16,7 +16,6 @@ router.post('/checkout', async (req, res) => {
     let calculatedTotalProfit = 0;
     const orderItems = [];
 
-    // Start by updating product quantities and sold counts
     for (let item of items) {
       const product = await Product.findById(item._id);
       if (!product) {
@@ -66,7 +65,7 @@ router.post('/checkout', async (req, res) => {
 // Get transaction history
 router.get('/transactions', async (req, res) => {
   try {
-    const orders = await Order.find().sort({ date: -1 }); // Sort by newest first
+    const orders = await Order.find().sort({ date: -1 }); 
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -79,7 +78,6 @@ router.get('/sales/today', async (req, res) => {
     const { cashier } = req.query;
     if (!cashier) return res.status(400).json({ message: 'Cashier username is required' });
 
-    // Start and end of today
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const endOfToday = new Date();

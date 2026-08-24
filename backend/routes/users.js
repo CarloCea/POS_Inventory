@@ -18,7 +18,6 @@ router.post('/', async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
     
-    // Check if user exists
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
@@ -41,7 +40,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update a user (Change details or password)
+// Update a user 
 router.put('/:id', async (req, res) => {
   try {
     const { username, email, password, role } = req.body;

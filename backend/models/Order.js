@@ -6,10 +6,10 @@ const orderSchema = new mongoose.Schema({
       productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
       name: String,
       quantity: Number,
-      price: Number,      // Cost
-      profit: Number,     // Markup per unit
-      totalCost: Number,  // Selling price per unit
-      subtotal: Number    // totalCost * quantity
+      price: Number,      
+      profit: Number,     
+      totalCost: Number,  
+      subtotal: Number    
     }
   ],
   totalSales: { type: Number, required: true },

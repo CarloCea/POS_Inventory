@@ -12,7 +12,6 @@ const App = () => {
     return <POSApp />;
   }
 
-  // Otherwise, default to the Admin / Back-Office app.
   return <AdminApp />;
 };
 

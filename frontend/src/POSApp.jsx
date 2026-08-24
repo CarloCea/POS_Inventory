@@ -8,8 +8,12 @@ import POS from './pages/POS';
 import { getInventory, getTodaySales, login, forgotPassword, verifyOtp, resetPassword } from './api';
 
 const POSApp = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('posLoggedIn') === 'true';
+  });
+  const [username, setUsername] = useState(() => {
+    return localStorage.getItem('posUsername') || '';
+  });
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -54,7 +58,7 @@ const POSApp = () => {
       
       const interval = setInterval(() => {
         fetchSales(username);
-      }, 30000); // every 30s
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [isLoggedIn, username]);
@@ -66,6 +70,8 @@ const POSApp = () => {
       const res = await login({ username, password });
       if (res.success) {
         setIsLoggedIn(true);
+        localStorage.setItem('posLoggedIn', 'true');
+        localStorage.setItem('posUsername', username);
       }
     } catch (err) {
       setLoginError(err.response?.data?.message || 'Login failed');
@@ -74,6 +80,8 @@ const POSApp = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('posLoggedIn');
+    localStorage.removeItem('posUsername');
     setUsername('');
     setPassword('');
     setTodaySales(0);
@@ -294,7 +302,7 @@ const POSApp = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* POS Specific Header */}
+      {/* POS  Header */}
       <header className="bg-white shadow-md relative z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3 shrink-0">

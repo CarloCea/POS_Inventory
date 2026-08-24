@@ -42,12 +42,9 @@ router.post('/restock', async (req, res) => {
   try {
     const { name, category, netWeight, image, quantity, price, profit, reorderPoint } = req.body;
     const totalCost = Number(price) + Number(profit);
-
-    // Look for an existing product with the exact same name AND price
     const existingProduct = await Product.findOne({ name: name, price: Number(price) });
 
     if (existingProduct) {
-      // Merge into existing row
       existingProduct.quantity += Number(quantity);
       existingProduct.profit = profit; 
       existingProduct.totalCost = totalCost;
@@ -57,7 +54,6 @@ router.post('/restock', async (req, res) => {
       await existingProduct.save();
       return res.status(200).json(existingProduct);
     } else {
-      // Prices differ, create a new row (batch)
       const product = new Product({
         name,
         category,

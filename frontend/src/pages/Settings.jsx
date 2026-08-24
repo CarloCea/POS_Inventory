@@ -17,14 +17,13 @@ const Settings = () => {
   const [editForm, setEditForm] = useState({ email: '', role: 'Cashier' });
   
   // Password change state within Edit Modal
-  const [pwdStep, setPwdStep] = useState(0); // 0: button, 1: otp sent, 2: verify otp, 3: enter new pwd
+  const [pwdStep, setPwdStep] = useState(0); 
   const [pwdOtp, setPwdOtp] = useState('');
   const [pwdNew, setPwdNew] = useState('');
   const [pwdMessage, setPwdMessage] = useState('');
   const [pwdError, setPwdError] = useState('');
 
   useEffect(() => {
-    // Load settings from localStorage
     const savedSettings = localStorage.getItem('sariSariSettings');
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings));
@@ -44,7 +43,6 @@ const Settings = () => {
   const handleSave = (e) => {
     e.preventDefault();
     localStorage.setItem('sariSariSettings', JSON.stringify(settings));
-    // Also dispatch a custom event to notify other components (like Inventory)
     window.dispatchEvent(new Event('settingsUpdated'));
     alert('Settings saved successfully!');
   };
