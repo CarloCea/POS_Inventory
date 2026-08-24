@@ -22,7 +22,8 @@ try {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
+
     if (username === 'admin' && password === 'admin123') {
       const adminExists = await User.findOne({ username: 'admin' });
       if (!adminExists) {

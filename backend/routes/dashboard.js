@@ -26,6 +26,7 @@ router.get('/stats', async (req, res) => {
       .slice(0, 10);
 
 
+
     const salesOverTime = {};
     orders.forEach(order => {
       const dateStr = order.date.toISOString().split('T')[0]; 
