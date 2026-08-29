@@ -13,7 +13,7 @@ router.get('/stats', async (req, res) => {
     const lowStockItems = products.filter(p => p.quantity <= p.reorderPoint).length;
     const totalSales = orders.reduce((sum, order) => sum + (order.totalSales || 0), 0);
     const totalProfit = orders.reduce((sum, order) => sum + (order.totalProfit || 0), 0);
-    const totalLoss = adjustments.reduce((sum, log) => sum + (log.lossCost || 0), 0);
+    const totalLoss = adjustments.reduce((sum, log) => sum + (log.cost || log.lossCost || 0), 0);
 
     const salesByProduct = {};
     orders.forEach(order => {

@@ -178,14 +178,15 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                 }
                 const isDisabled = item.quantity === 0 || isExpired;
                 return (
-                <button
+                <div
                   key={item._id}
-                  onClick={() => addToCart(item)}
-                  disabled={isDisabled}
-                  className={`p-1.5 sm:p-3 rounded-2xl border transition-all flex flex-col h-full relative overflow-hidden ${
+                  onClick={() => !isDisabled && addToCart(item)}
+                  role="button"
+                  tabIndex={0}
+                  className={`p-1.5 sm:p-3 rounded-2xl border transition-all flex flex-col relative overflow-hidden ${
                     isDisabled 
                       ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60' 
-                      : 'bg-white border-gray-100 hover:border-gray-400 hover:shadow-md'
+                      : 'bg-white border-gray-100 hover:border-gray-400 hover:shadow-md cursor-pointer'
                   }`}
                 >
                   {isExpired && (
@@ -206,7 +207,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                           </h3>
                           <p className="text-[9px] sm:text-xs text-gray-500 mt-0.5 truncate">{item.category}</p>
                         </div>
-                        <div className="mt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-1">
+                        <div className="mt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-1 shrink-0">
                           <span className="font-bold text-gray-900 text-xs sm:text-sm">₱{item.totalCost?.toFixed(2) || (item.price + (item.profit||0)).toFixed(2)}</span>
                           <span className={`text-[8px] sm:text-[10px] px-1 py-0.5 rounded-sm sm:rounded-full ${item.quantity > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'}`}>
                             {item.quantity > 0 ? `${item.quantity} left` : 'Out'}
@@ -215,20 +216,20 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                       </div>
                     </>
                   ) : (
-                    <div className="flex-1 flex flex-col justify-between w-full h-full min-h-[120px] sm:min-h-[150px]">
+                    <div className="flex flex-col justify-between w-full h-full flex-1 min-h-[150px]">
                       <div className="flex-1 flex flex-col items-center justify-center text-center p-1 sm:p-2">
-                        <h3 className="font-bold text-gray-800 text-sm sm:text-lg leading-tight line-clamp-3">
+                        <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-snug line-clamp-4 mb-1 break-words whitespace-normal">
                           {item.name}
-                          <span className="text-gray-500 text-[10px] block font-normal">/ {item.unit || 'pcs'}</span>
                         </h3>
-                        <div className="flex flex-wrap justify-center gap-1 mt-2">
-                          <span className="text-gray-500 font-medium text-[10px] sm:text-xs border border-gray-200 rounded-full px-2 py-0.5 bg-gray-50">{item.category}</span>
+                        <span className="text-gray-500 text-[10px] block font-normal mb-1">/ {item.unit || 'pcs'}</span>
+                        <div className="flex flex-wrap justify-center gap-1 mt-1">
+                          <span className="text-gray-500 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2 py-0.5 bg-gray-50">{item.category}</span>
                           {item.netWeight && (
-                            <span className="text-gray-500 font-medium text-[10px] sm:text-xs border border-gray-200 rounded-full px-2 py-0.5 bg-gray-50">{item.netWeight}</span>
+                            <span className="text-gray-500 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2 py-0.5 bg-gray-50">{item.netWeight}</span>
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 flex flex-col sm:flex-row justify-between items-center w-full gap-1 border-t border-gray-100 pt-2">
+                      <div className="mt-auto pt-3 flex flex-col sm:flex-row justify-between items-center w-full gap-1 border-t border-gray-100 shrink-0">
                         <span className="font-bold text-gray-900 text-xs sm:text-sm">₱{item.totalCost?.toFixed(2) || (item.price + (item.profit||0)).toFixed(2)}</span>
                         <span className={`text-[8px] sm:text-[10px] px-1 py-0.5 rounded-sm sm:rounded-full ${item.quantity > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'}`}>
                           {item.quantity > 0 ? `${item.quantity} left` : 'Out'}
@@ -236,7 +237,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                       </div>
                     </div>
                   )}
-                </button>
+                </div>
               )})}
             </div>
           </div>

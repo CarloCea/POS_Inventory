@@ -27,18 +27,29 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Not enough stock to adjust' });
     }
 
-    // Calculate loss cost
-    const lossCost = product.totalCost ? (product.totalCost * quantity) : (product.price * quantity);
+    // Calculate cost (cost of item without profit * quantity)
+    const cost = product.price * quantity;
 
-    // Create log
-    const adjustment = new StockAdjustment({
-      productId: product._id,
-      productName: product.name,
-      quantity,
-      reason,
-      notes,
-      lossCost
-    });
+    // Check for existing log for this product and reason
+    let adjustment = await StockAdjustment.findOne({ productId: product._id, reason });
+
+    if (adjustment) {
+      adjustment.quantity += quantity;
+      adjustment.cost = (adjustment.cost || 0) + cost;
+      adjustment.date = Date.now(); // update to latest date
+      if (notes) {
+        adjustment.notes = adjustment.notes ? `${adjustment.notes} | ${notes}` : notes;
+      }
+    } else {
+      adjustment = new StockAdjustment({
+        productId: product._id,
+        productName: product.name,
+        quantity,
+        reason,
+        notes,
+        cost
+      });
+    }
 
     // Deduct stock
     product.quantity -= quantity;

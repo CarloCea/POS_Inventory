@@ -10,7 +10,7 @@ const stockAdjustmentSchema = new mongoose.Schema({
     required: true
   },
   notes: { type: String },
-  lossCost: { type: Number, default: 0 },
+  cost: { type: Number, default: 0 },
   date: { type: Date, default: Date.now }
 });
 

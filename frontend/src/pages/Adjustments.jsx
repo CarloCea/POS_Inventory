@@ -40,7 +40,7 @@ const Adjustments = () => {
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Deducted</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loss Cost</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                 </tr>
               </thead>
@@ -67,7 +67,7 @@ const Adjustments = () => {
                       -{log.quantity}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-medium text-red-700">
-                      ₱{(log.lossCost || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                      ₱{(log.cost || log.lossCost || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                       {log.notes || '-'}
