@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 // Add new product
 router.post('/', async (req, res) => {
   try {
-    const { name, category, netWeight, image, quantity, price, profit, reorderPoint } = req.body;
+    const { name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
     const totalCost = Number(price) + Number(profit);
     
     const product = new Product({
@@ -27,7 +27,10 @@ router.post('/', async (req, res) => {
       price,
       profit,
       totalCost,
-      reorderPoint
+      reorderPoint,
+      expiryDate,
+      unit,
+      barcode
     });
     
     await product.save();
@@ -40,7 +43,7 @@ router.post('/', async (req, res) => {
 // Restock product
 router.post('/restock', async (req, res) => {
   try {
-    const { name, category, netWeight, image, quantity, price, profit, reorderPoint } = req.body;
+    const { name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
     const totalCost = Number(price) + Number(profit);
     const existingProduct = await Product.findOne({ name: name, price: Number(price) });
 
@@ -49,6 +52,9 @@ router.post('/restock', async (req, res) => {
       existingProduct.profit = profit; 
       existingProduct.totalCost = totalCost;
       existingProduct.reorderPoint = reorderPoint;
+      if (expiryDate !== undefined) existingProduct.expiryDate = expiryDate;
+      if (unit !== undefined) existingProduct.unit = unit;
+      if (barcode !== undefined) existingProduct.barcode = barcode;
       if (netWeight !== undefined) existingProduct.netWeight = netWeight;
       if (image !== undefined) existingProduct.image = image;
       await existingProduct.save();
@@ -63,7 +69,10 @@ router.post('/restock', async (req, res) => {
         price,
         profit,
         totalCost,
-        reorderPoint
+        reorderPoint,
+        expiryDate,
+        unit,
+        barcode
       });
       await product.save();
       return res.status(201).json(product);

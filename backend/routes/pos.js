@@ -25,6 +25,15 @@ router.post('/checkout', async (req, res) => {
         return res.status(400).json({ message: `Not enough stock for ${item.name}` });
       }
       
+      if (product.expiryDate) {
+        const expiry = new Date(product.expiryDate);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // compare dates only
+        if (expiry < now) {
+          return res.status(400).json({ message: `Cannot sell expired product: ${item.name}` });
+        }
+      }
+      
       product.quantity -= item.cartQuantity;
       product.sold += item.cartQuantity;
       await product.save();

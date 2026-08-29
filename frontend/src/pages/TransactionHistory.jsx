@@ -28,9 +28,9 @@ const TransactionHistory = () => {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow flex flex-col h-[60vh] lg:h-full overflow-hidden w-full">
-      <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between sm:items-center space-y-3 sm:space-y-0">
-        <h2 className="text-xl font-semibold text-gray-800">Transaction History</h2>
+    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col h-[60vh] lg:h-full overflow-hidden w-full">
+      <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center space-y-3 sm:space-y-0">
+        <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -38,7 +38,7 @@ const TransactionHistory = () => {
             placeholder="Search ID or Item..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm w-full sm:w-64"
+            className="pl-9 pr-4 py-2 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm w-full sm:w-64 transition-all"
           />
         </div>
       </div>
@@ -55,17 +55,17 @@ const TransactionHistory = () => {
           </div>
         ) : (
           <table className="w-full min-w-[700px]">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sales</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sales</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white">
               {filteredTransactions.map(tx => (
-                <tr key={tx._id} className="hover:bg-gray-50">
+                <tr key={tx._id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-400" />
@@ -80,7 +80,7 @@ const TransactionHistory = () => {
                       {tx.items.map(i => `${i.quantity}x ${i.name}${i.netWeight ? ` (${i.netWeight})` : ''}`).join(', ')}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-blue-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
                     ₱{tx.totalSales?.toFixed(2)}
                   </td>
                 </tr>

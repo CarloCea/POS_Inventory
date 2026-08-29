@@ -2,15 +2,18 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const StockAdjustment = require('../models/StockAdjustment');
 
 router.get('/stats', async (req, res) => {
   try {
     const products = await Product.find();
     const orders = await Order.find();
+    const adjustments = await StockAdjustment.find();
 
     const lowStockItems = products.filter(p => p.quantity <= p.reorderPoint).length;
     const totalSales = orders.reduce((sum, order) => sum + (order.totalSales || 0), 0);
     const totalProfit = orders.reduce((sum, order) => sum + (order.totalProfit || 0), 0);
+    const totalLoss = adjustments.reduce((sum, log) => sum + (log.lossCost || 0), 0);
 
     const salesByProduct = {};
     orders.forEach(order => {
@@ -40,6 +43,7 @@ router.get('/stats', async (req, res) => {
     res.json({
       totalSales,
       totalProfit,
+      totalLoss,
       lowStockItems,
       topSellingProducts,
       chartData

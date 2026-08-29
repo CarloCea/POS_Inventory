@@ -27,6 +27,16 @@ export const deleteProduct = async (id) => {
   return response.data;
 };
 
+export const getAdjustments = async () => {
+  const response = await axios.get(`${API_URL}/adjustments`);
+  return response.data;
+};
+
+export const addAdjustment = async (adjustmentData) => {
+  const response = await axios.post(`${API_URL}/adjustments`, adjustmentData);
+  return response.data;
+};
+
 export const processCheckout = async (orderData) => {
   const response = await axios.post(`${API_URL}/pos/checkout`, orderData);
   return response.data;

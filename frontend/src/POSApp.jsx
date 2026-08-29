@@ -137,11 +137,11 @@ const POSApp = () => {
   if (!isLoggedIn) {
     if (isForgotPassword) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md mx-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 w-full max-w-md mx-4">
             <div className="text-center mb-6">
-              <KeyRound className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-800">Forgot Password</h2>
+              <KeyRound className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Forgot Password</h2>
               <p className="text-gray-600 mt-2">
                 {fpStep === 1 && "Enter your email to receive an OTP."}
                 {fpStep === 2 && "Enter the OTP sent to your email."}
@@ -169,11 +169,11 @@ const POSApp = () => {
                     required
                     value={fpEmail}
                     onChange={(e) => setFpEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     placeholder="Enter your email"
                   />
                 </div>
-                <button type="submit" className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700">
+                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
                   Send OTP
                 </button>
               </form>
@@ -188,12 +188,12 @@ const POSApp = () => {
                     required
                     value={fpOtp}
                     onChange={(e) => setFpOtp(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none tracking-widest text-center text-lg"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none tracking-widest text-center text-lg transition-all"
                     placeholder="••••••"
                     maxLength={6}
                   />
                 </div>
-                <button type="submit" className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700">
+                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
                   Verify OTP
                 </button>
               </form>
@@ -208,11 +208,11 @@ const POSApp = () => {
                     required
                     value={fpNewPassword}
                     onChange={(e) => setFpNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     placeholder="Enter new password"
                   />
                 </div>
-                <button type="submit" className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">
+                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
                   Reset Password
                 </button>
               </form>
@@ -232,11 +232,11 @@ const POSApp = () => {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md mx-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 w-full max-w-md mx-4">
           <div className="text-center mb-8">
             <ShoppingCart className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800">Sari-Sari Store POS</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Sari-Sari Store POS</h1>
             <p className="text-gray-600 mt-2">Point of Sale System</p>
           </div>
           
@@ -247,7 +247,7 @@ const POSApp = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 placeholder="Enter username"
               />
             </div>
@@ -260,7 +260,7 @@ const POSApp = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all pr-12"
                   placeholder="Enter password"
                 />
                 <button
@@ -281,7 +281,7 @@ const POSApp = () => {
             
             <button
               onClick={handleLogin}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 shadow-md"
+              className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
             >
               Login
             </button>
@@ -289,7 +289,7 @@ const POSApp = () => {
             <div className="text-center mt-4">
               <button 
                 onClick={() => setIsForgotPassword(true)}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
               >
                 Forgot Password?
               </button>
@@ -306,8 +306,8 @@ const POSApp = () => {
       <header className="bg-white shadow-md relative z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3 shrink-0">
-            <Monitor className="w-8 h-8 text-purple-600" />
-            <h1 className="text-2xl font-bold text-gray-800">POS Terminal</h1>
+            <Monitor className="w-8 h-8 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">POS Terminal</h1>
           </div>
           <div className="flex items-center space-x-6">
             <div className="flex flex-col text-right">
@@ -316,7 +316,7 @@ const POSApp = () => {
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-1 text-red-600 hover:text-red-700 font-medium border-l pl-4 border-gray-300"
+              className="flex items-center space-x-1 text-red-500 hover:text-red-700 font-medium border-l pl-4 border-gray-200"
             >
               <LogOut className="w-5 h-5 md:w-4 md:h-4" />
               <span className="hidden md:inline">Logout</span>
@@ -329,7 +329,7 @@ const POSApp = () => {
         {loading ? (
           <div className="flex justify-center items-center h-full min-h-[50vh]">
             <div className="text-xl text-gray-600 flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
               <span>Loading terminal...</span>
             </div>
           </div>

@@ -4,13 +4,16 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   category: { type: String, required: true },
   netWeight: { type: String, default: '' },
-  image: { type: String, default: '' }, 
+  image: { type: String, default: '' },
   quantity: { type: Number, required: true, default: 0 },
-  price: { type: Number, required: true },        
-  profit: { type: Number, required: true },       
-  totalCost: { type: Number, required: true },    
+  price: { type: Number, required: true },
+  profit: { type: Number, required: true },
+  totalCost: { type: Number, required: true },
   sold: { type: Number, required: true, default: 0 },
-  reorderPoint: { type: Number, required: true, default: 10 } 
+  reorderPoint: { type: Number, required: true, default: 10 },
+  expiryDate: { type: String, default: '' },
+  unit: { type: String, enum: ['pcs', 'packs'], default: 'pcs' },
+  barcode: { type: String, default: '' }
 });
 
 module.exports = mongoose.model('Product', productSchema);

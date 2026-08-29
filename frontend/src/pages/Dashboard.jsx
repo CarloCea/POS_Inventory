@@ -8,6 +8,7 @@ const Dashboard = ({ inventory = [] }) => {
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProfit: 0,
+    totalLoss: 0,
     lowStockItems: 0,
     topSellingProducts: [],
     chartData: []
@@ -102,42 +103,54 @@ const Dashboard = ({ inventory = [] }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-gray-500">Total Sales</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">₱{stats.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
-            <div className="p-3 bg-blue-50 rounded-full">
-              <TrendingUp className="w-8 h-8 text-blue-600" />
+            <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-gray-500">Total Profit</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">₱{stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
-            <div className="p-3 bg-green-50 rounded-full">
-              <DollarSign className="w-8 h-8 text-green-600" />
+            <div className="p-4 bg-green-50 border border-green-100 rounded-xl">
+              <DollarSign className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-gray-500">Low Stock Items</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{stats.lowStockItems}</p>
             </div>
-            <div className="p-3 bg-orange-50 rounded-full">
-              <AlertTriangle className="w-8 h-8 text-orange-600" />
+            <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+              <AlertTriangle className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Total Loss</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">₱{(stats.totalLoss || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
@@ -146,19 +159,19 @@ const Dashboard = ({ inventory = [] }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
           <div className="flex flex-col space-y-4">
             <button
               onClick={() => handleOpenModal('add')}
-              className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full"
+              className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition-colors w-full font-medium"
             >
               <Plus className="w-5 h-5" />
               <span>Add New Item</span>
             </button>
             <button
               onClick={() => handleOpenModal('restock')}
-              className="flex items-center justify-center space-x-2 bg-orange-100 text-orange-700 px-4 py-3 rounded-lg hover:bg-orange-200 transition-colors w-full"
+              className="flex items-center justify-center space-x-2 bg-orange-50 text-orange-700 px-4 py-3 rounded-xl hover:bg-orange-100 transition-colors w-full font-medium"
             >
               <Package className="w-5 h-5" />
               <span>Restock Item</span>
@@ -167,14 +180,14 @@ const Dashboard = ({ inventory = [] }) => {
         </div>
 
         {/* Line Chart */}
-        <div className="bg-white rounded-lg shadow p-6 lg:col-span-3">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-3">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-800 flex items-center space-x-2">
               <span>Sales Overview for</span>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-1.5 ml-2 font-semibold"
+                className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 p-1.5 ml-2 font-medium outline-none"
               >
                 {months.map((m, i) => (
                   <option key={i} value={i}>{m}</option>
@@ -183,7 +196,7 @@ const Dashboard = ({ inventory = [] }) => {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-1.5 ml-2 font-semibold"
+                className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 p-1.5 ml-2 font-medium outline-none"
               >
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -227,10 +240,10 @@ const Dashboard = ({ inventory = [] }) => {
                     allowDecimals={false}
                     domain={[0, dataMax => Math.max(Math.ceil(dataMax / 10) * 10, 10)]}
                   />
-                  <RechartsTooltip formatter={(value) => `₱${value.toLocaleString()}`} />
-                  <Legend />
-                  <Bar dataKey="sales" name="Sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="profit" name="Profit" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <RechartsTooltip formatter={(value) => `₱${value.toLocaleString()}`} cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }} />
+                  <Legend iconType="circle" />
+                  <Bar dataKey="sales" name="Sales" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" name="Profit" fill="#16a34a" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

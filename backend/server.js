@@ -16,12 +16,14 @@ const posRoutes = require('./routes/pos');
 const dashboardRoutes = require('./routes/dashboard');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const adjustmentsRoutes = require('./routes/adjustments');
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/pos', posRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/adjustments', adjustmentsRoutes);
 
 // MongoDB connection
 const PORT = process.env.PORT || 5000;

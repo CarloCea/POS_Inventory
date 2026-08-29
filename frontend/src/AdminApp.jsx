@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import TopSelling from './pages/TopSelling';
 import Inventory from './pages/Inventory';
 import Settings from './pages/Settings';
+import Adjustments from './pages/Adjustments';
 
 // API
 import { getInventory } from './api';
@@ -61,11 +62,11 @@ const AdminApp = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md mx-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 w-full max-w-md mx-4">
           <div className="text-center mb-8">
             <ShoppingCart className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800">Sari-Sari Store Admin</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Sari-Sari Store Admin</h1>
             <p className="text-gray-600 mt-2">Inventory Management System</p>
           </div>
           
@@ -76,7 +77,7 @@ const AdminApp = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 placeholder="Enter username"
               />
             </div>
@@ -89,7 +90,7 @@ const AdminApp = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin(e)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all pr-12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all pr-12"
                   placeholder="Enter password"
                 />
                 <button
@@ -110,7 +111,7 @@ const AdminApp = () => {
             
             <button
               onClick={handleLogin}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 shadow-md"
+              className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
             >
               Login
             </button>
@@ -139,6 +140,7 @@ const AdminApp = () => {
               <Route path="/top-selling" element={<TopSelling inventory={inventory} />} />
               <Route path="/inventory" element={<Inventory inventory={inventory} fetchInventory={fetchInventory} />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/adjustments" element={<Adjustments />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           )}
