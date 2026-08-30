@@ -307,7 +307,12 @@ const POSApp = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3 shrink-0">
             <Monitor className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">POS Terminal</h1>
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-gray-900">POS Terminal</h1>
+              <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+            </div>
           </div>
           <div className="flex items-center space-x-6">
             <div className="flex flex-col text-right">

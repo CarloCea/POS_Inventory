@@ -33,9 +33,15 @@ router.get('/stats', async (req, res) => {
     const salesOverTime = {};
     orders.forEach(order => {
       const dateStr = order.date.toISOString().split('T')[0]; 
-      if (!salesOverTime[dateStr]) salesOverTime[dateStr] = { date: dateStr, sales: 0, profit: 0 };
+      if (!salesOverTime[dateStr]) salesOverTime[dateStr] = { date: dateStr, sales: 0, profit: 0, loss: 0 };
       salesOverTime[dateStr].sales += (order.totalSales || 0);
       salesOverTime[dateStr].profit += (order.totalProfit || 0);
+    });
+
+    adjustments.forEach(log => {
+      const dateStr = log.date.toISOString().split('T')[0];
+      if (!salesOverTime[dateStr]) salesOverTime[dateStr] = { date: dateStr, sales: 0, profit: 0, loss: 0 };
+      salesOverTime[dateStr].loss += (log.cost || log.lossCost || 0);
     });
 
     const chartData = Object.values(salesOverTime).sort((a, b) => new Date(a.date) - new Date(b.date));

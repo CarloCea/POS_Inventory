@@ -21,11 +21,16 @@ const Adjustments = () => {
     fetchAdjustments();
   }, []);
 
+  const currentMonthString = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center space-x-3 mb-6">
-        <ClipboardList className="w-8 h-8 text-blue-600" />
-        <h2 className="text-3xl font-bold text-gray-900">Stock Logs</h2>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-3">
+          <ClipboardList className="w-8 h-8 text-blue-600" />
+          <h2 className="text-3xl font-bold text-gray-900">Stock Logs</h2>
+        </div>
+        <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{currentMonthString}</span>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

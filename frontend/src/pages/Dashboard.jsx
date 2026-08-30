@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getDashboardStats, addProduct, restockProduct } from '../api';
-import { TrendingUp, AlertTriangle, DollarSign, Plus, Package, X } from 'lucide-react';
+import { TrendingUp, AlertTriangle, DollarSign, Plus, Package, X, ShoppingCart } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, } from 'recharts';
 
 
@@ -101,17 +101,31 @@ const Dashboard = ({ inventory = [] }) => {
     return <div className="flex justify-center items-center h-full py-20 text-gray-500">Loading Dashboard...</div>;
   }
 
+  const currentMonthData = stats.chartData.filter(d => {
+    const date = new Date(d.date);
+    return !isNaN(date.getTime()) && date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+  });
+
+  const monthlySales = currentMonthData.reduce((sum, day) => sum + (day.sales || 0), 0);
+  const monthlyProfit = currentMonthData.reduce((sum, day) => sum + (day.profit || 0), 0);
+  const monthlyLoss = currentMonthData.reduce((sum, day) => sum + (day.loss || 0), 0);
+
+  const currentMonthString = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
+        <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{currentMonthString}</span>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Sales</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">₱{stats.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm font-medium text-gray-500">Monthly Sales</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">₱{monthlySales.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
               <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -122,8 +136,8 @@ const Dashboard = ({ inventory = [] }) => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Profit</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">₱{stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm font-medium text-gray-500">Monthly Profit</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">₱{monthlyProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="p-4 bg-green-50 border border-green-100 rounded-xl">
               <DollarSign className="w-6 h-6 text-green-600" />
@@ -146,8 +160,8 @@ const Dashboard = ({ inventory = [] }) => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Loss</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">₱{(stats.totalLoss || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm font-medium text-gray-500">Monthly Loss</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">₱{(monthlyLoss || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
               <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -175,6 +189,20 @@ const Dashboard = ({ inventory = [] }) => {
             >
               <Package className="w-5 h-5" />
               <span>Restock Item</span>
+            </button>
+            <button
+              onClick={() => {
+                const { protocol, hostname } = window.location;
+                if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                  window.open(`${protocol}//${hostname}:3001`, '_blank');
+                } else {
+                  window.open(`${protocol}//pos.${hostname}`, '_blank');
+                }
+              }}
+              className="flex items-center justify-center space-x-2 bg-green-50 text-green-700 px-4 py-3 rounded-xl hover:bg-green-100 transition-colors w-full font-medium"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span>Open POS</span>
             </button>
           </div>
         </div>
@@ -210,11 +238,6 @@ const Dashboard = ({ inventory = [] }) => {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={(() => {
-                  const currentMonthData = stats.chartData.filter(d => {
-                    const date = new Date(d.date);
-                    return !isNaN(date.getTime()) && date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
-                  });
-
                   const weeklyData = [
                     { name: 'Week 1', sales: 0, profit: 0 },
                     { name: 'Week 2', sales: 0, profit: 0 },

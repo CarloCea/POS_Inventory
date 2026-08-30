@@ -158,9 +158,14 @@ const Inventory = ({ inventory, fetchInventory }) => {
 
   const totalCostCalc = (Number(formData.price) || 0) + (Number(formData.profit) || 0);
 
+  const currentMonthString = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6">Inventory Management</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-900">Inventory Management</h2>
+        <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{currentMonthString}</span>
+      </div>
 
       {/* Toolbar */}
       <div className="bg-white rounded-t-2xl border border-gray-200 border-b-0 p-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
@@ -208,8 +213,8 @@ const Inventory = ({ inventory, fetchInventory }) => {
         <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode (ID)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
@@ -236,6 +241,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
               
               return (
               <tr key={item._id} className={rowClass}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.barcode || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <span className="font-medium text-gray-900">{item.name}</span>
@@ -250,10 +256,9 @@ const Inventory = ({ inventory, fetchInventory }) => {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.barcode || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.category}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`font-semibold ${isLowStock ? 'text-yellow-600' : 'text-gray-900'}`}>
+                  <span className={` ${isLowStock ? 'text-yellow-600' : 'text-gray-600'}`}>
                     {item.quantity} {item.unit || 'pcs'}
                   </span>
                 </td>

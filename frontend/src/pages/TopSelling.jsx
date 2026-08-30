@@ -4,9 +4,14 @@ import { TrendingUp } from 'lucide-react';
 const TopSelling = ({ inventory }) => {
   const topSellingItems = [...inventory].sort((a, b) => b.sold - a.sold).slice(0, 5);
 
+  const currentMonthString = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6">Top Selling Items</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-900">Top Selling Items</h2>
+        <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{currentMonthString}</span>
+      </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
