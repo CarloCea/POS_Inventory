@@ -305,7 +305,7 @@ const POSApp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-[100dvh] bg-gray-50 flex flex-col overflow-hidden">
       {/* POS  Header */}
       <header className="bg-white shadow-md relative z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -313,9 +313,7 @@ const POSApp = () => {
             <Monitor className="w-8 h-8 text-blue-600" />
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-gray-900">POS Terminal</h1>
-              <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </span>
+
             </div>
           </div>
           <div className="flex items-center space-x-6">
@@ -334,7 +332,7 @@ const POSApp = () => {
         </div>
       </header>
       
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center h-full min-h-[50vh]">
             <div className="text-xl text-gray-600 flex flex-col items-center">

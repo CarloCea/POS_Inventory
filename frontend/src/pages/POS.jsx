@@ -102,7 +102,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4 md:py-8 lg:h-[calc(100vh-80px)] flex flex-col gap-4 md:gap-6">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 h-full flex flex-col gap-2 sm:gap-4 overflow-hidden">
       
       {/* POS Sub-navigation */}
       <div className="flex space-x-4 border-b pb-2 shrink-0">
@@ -123,7 +123,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       {activeTab === 'checkout' ? (
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6 flex-1 min-h-0">
           {/* Product List */}
-          <div className="w-full lg:w-2/3 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col h-[50vh] lg:h-full overflow-hidden">
+          <div className="w-full lg:w-2/3 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col flex-1 lg:h-full overflow-hidden min-h-0">
             <div className="px-6 py-4 border-b border-gray-100">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="text-xl font-bold text-gray-900">Products</h2>
@@ -243,7 +243,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
           </div>
 
           {/* Cart/Checkout */}
-          <div className="w-full lg:w-1/3 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col min-h-[40vh] lg:h-full overflow-hidden">
+          <div className="w-full lg:w-1/3 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col h-[40vh] lg:h-full overflow-hidden shrink-0">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
               <h2 className="text-xl font-bold text-gray-900 flex items-center">
                 <ShoppingCart className="w-5 h-5 mr-2" />

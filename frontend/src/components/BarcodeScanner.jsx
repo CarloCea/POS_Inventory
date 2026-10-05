@@ -11,7 +11,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       try {
         const scanner = new Html5QrcodeScanner(
           "reader",
-          { fps: 10, qrbox: { width: 250, height: 250 } },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
           /* verbose= */ false
         );
 
@@ -43,10 +43,11 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100] p-4">
       <style>
         {`
-          #reader { border: none !important; }
+          #reader { border: none !important; width: 100% !important; max-width: 100% !important; }
+          #reader video { max-width: 100% !important; height: auto !important; border-radius: 8px; }
           #reader img { display: none !important; }
-          #reader__dashboard_section_csr span { color: white !important; margin-bottom: 10px; display: block; }
-          #reader__dashboard_section_csr select { padding: 6px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ccc; max-width: 100%; }
+          #reader__dashboard_section_csr span { color: white !important; margin-bottom: 10px; display: block; text-align: center; }
+          #reader__dashboard_section_csr select { padding: 6px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ccc; max-width: 100%; width: 100%; box-sizing: border-box; }
           #reader button { 
             background-color: #7c3aed !important; 
             color: white !important; 
@@ -56,12 +57,13 @@ const BarcodeScanner = ({ onScan, onClose }) => {
             cursor: pointer !important; 
             font-weight: 600 !important;
             margin: 5px;
+            max-width: 100%;
           }
           #reader a { display: none !important; }
         `}
       </style>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col relative">
-        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
           <h3 className="text-lg font-bold text-gray-800">Scan Barcode</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-6 h-6" />
