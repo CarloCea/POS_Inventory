@@ -69,6 +69,10 @@ const POSApp = () => {
       setLoginError('');
       const res = await login({ username, password });
       if (res.success) {
+        if (res.role === 'Administrator') {
+          setLoginError('Administrators cannot access the POS. Please use a Cashier account.');
+          return;
+        }
         setIsLoggedIn(true);
         localStorage.setItem('posLoggedIn', 'true');
         localStorage.setItem('posUsername', username);
