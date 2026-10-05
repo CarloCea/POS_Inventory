@@ -192,11 +192,11 @@ const Dashboard = ({ inventory = [] }) => {
             </button>
             <button
               onClick={() => {
-                const { protocol, hostname } = window.location;
+                const { protocol, hostname, origin } = window.location;
                 if (hostname === 'localhost' || hostname === '127.0.0.1') {
                   window.open(`${protocol}//${hostname}:3001`, '_blank');
                 } else {
-                  window.open(`${protocol}//pos.${hostname}`, '_blank');
+                  window.open(`${origin}/pos`, '_blank');
                 }
               }}
               className="flex items-center justify-center space-x-2 bg-green-50 text-green-700 px-4 py-3 rounded-xl hover:bg-green-100 transition-colors w-full font-medium"
