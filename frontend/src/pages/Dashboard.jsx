@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getDashboardStats, addProduct, restockProduct } from '../api';
 import { TrendingUp, AlertTriangle, DollarSign, Plus, Package, X, ShoppingCart } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, } from 'recharts';
+import { toast } from '../context/ToastContext';
 
 
 const Dashboard = ({ inventory = [] }) => {
@@ -136,9 +137,10 @@ const Dashboard = ({ inventory = [] }) => {
       }
       await fetchStats();
       handleCloseModal();
+      toast.success(modalType === 'add' ? 'Product added successfully!' : 'Product restocked successfully!');
     } catch (err) {
       console.error("Operation failed", err.response?.data || err);
-      alert(`Failed to save data. Error: ${err.response?.data?.message || err.message}`);
+      toast.error(`Failed to save data. Error: ${err.response?.data?.message || err.message}`);
     }
   };
 

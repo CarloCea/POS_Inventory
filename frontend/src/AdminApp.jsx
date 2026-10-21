@@ -12,6 +12,7 @@ import Adjustments from './pages/Adjustments';
 
 // API
 import { getInventory, login, forgotPassword, verifyOtp, resetPassword } from './api';
+import { toast } from './context/ToastContext';
 
 const AdminApp = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -64,9 +65,12 @@ const AdminApp = () => {
         setIsLoggedIn(true);
         localStorage.setItem('adminLoggedIn', 'true');
         localStorage.setItem('adminUsername', res.username);
+        toast.success(`Welcome, ${res.username}!`);
       }
     } catch (err) {
-      setLoginError(err.response?.data?.message || 'Invalid username or password');
+      const msg = err.response?.data?.message || 'Invalid username or password';
+      setLoginError(msg);
+      toast.error(msg);
     }
   };
 
@@ -76,6 +80,7 @@ const AdminApp = () => {
     localStorage.removeItem('adminUsername');
     setUsername('');
     setPassword('');
+    toast.info('Logged out successfully');
   };
 
   const handleForgotPassword = async (e) => {
@@ -85,13 +90,16 @@ const AdminApp = () => {
       setFpMessage('Sending OTP...');
       const res = await forgotPassword(fpEmail);
       setFpMessage(res.message || 'OTP sent successfully!');
+      toast.success(res.message || 'OTP sent to your email!');
       setTimeout(() => {
         setFpMessage('');
         setFpStep(2);
       }, 1500);
     } catch (err) {
       setFpMessage('');
-      setFpError(err.response?.data?.message || 'Failed to send OTP');
+      const msg = err.response?.data?.message || 'Failed to send OTP';
+      setFpError(msg);
+      toast.error(msg);
     }
   };
 
@@ -112,6 +120,7 @@ const AdminApp = () => {
       setFpError('');
       await resetPassword({ email: fpEmail, otp: fpOtp, newPassword: fpNewPassword });
       setFpMessage('Password reset successful! You can now login.');
+      toast.success('Password reset successful! You can now login.');
       setTimeout(() => {
         setIsForgotPassword(false);
         setFpStep(1);
@@ -121,7 +130,9 @@ const AdminApp = () => {
         setFpMessage('');
       }, 2000);
     } catch (err) {
-      setFpError(err.response?.data?.message || 'Reset failed');
+      const msg = err.response?.data?.message || 'Reset failed';
+      setFpError(msg);
+      toast.error(msg);
     }
   };
 

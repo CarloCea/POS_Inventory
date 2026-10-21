@@ -6,6 +6,7 @@ import POS from './pages/POS';
 
 // API
 import { getInventory, getTodaySales, login, forgotPassword, verifyOtp, resetPassword } from './api';
+import { toast } from './context/ToastContext';
 
 const POSApp = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -76,9 +77,12 @@ const POSApp = () => {
         setIsLoggedIn(true);
         localStorage.setItem('posLoggedIn', 'true');
         localStorage.setItem('posUsername', username);
+        toast.success(`Welcome, ${username}!`);
       }
     } catch (err) {
-      setLoginError(err.response?.data?.message || 'Login failed');
+      const msg = err.response?.data?.message || 'Login failed';
+      setLoginError(msg);
+      toast.error(msg);
     }
   };
 
@@ -89,6 +93,7 @@ const POSApp = () => {
     setUsername('');
     setPassword('');
     setTodaySales(0);
+    toast.info('Logged out successfully');
   };
 
   const handleForgotPassword = async (e) => {
@@ -96,15 +101,18 @@ const POSApp = () => {
     try {
       setFpError('');
       setFpMessage('Sending OTP...');
-      await forgotPassword(fpEmail);
-      setFpMessage('OTP sent successfully!');
+      const res = await forgotPassword(fpEmail);
+      setFpMessage(res.message || 'OTP sent successfully!');
+      toast.success(res.message || 'OTP sent to your email!');
       setTimeout(() => {
         setFpMessage('');
         setFpStep(2);
       }, 1500);
     } catch (err) {
       setFpMessage('');
-      setFpError(err.response?.data?.message || 'Failed to send OTP');
+      const msg = err.response?.data?.message || 'Failed to send OTP';
+      setFpError(msg);
+      toast.error(msg);
     }
   };
 
@@ -125,6 +133,7 @@ const POSApp = () => {
       setFpError('');
       await resetPassword({ email: fpEmail, otp: fpOtp, newPassword: fpNewPassword });
       setFpMessage('Password reset successful! You can now login.');
+      toast.success('Password reset successful! You can now login.');
       setTimeout(() => {
         setIsForgotPassword(false);
         setFpStep(1);
@@ -134,7 +143,9 @@ const POSApp = () => {
         setFpMessage('');
       }, 2000);
     } catch (err) {
-      setFpError(err.response?.data?.message || 'Reset failed');
+      const msg = err.response?.data?.message || 'Reset failed';
+      setFpError(msg);
+      toast.error(msg);
     }
   };
 

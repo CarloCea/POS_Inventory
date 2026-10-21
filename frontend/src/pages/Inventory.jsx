@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Package, Edit2, Trash2, X, MinusCircle, ScanBarcode } from 'lucide-react';
 import { addProduct, restockProduct, updateInventory, deleteProduct, addAdjustment } from '../api';
 import BarcodeScanner from '../components/BarcodeScanner';
+import { toast } from '../context/ToastContext';
 
 const Inventory = ({ inventory, fetchInventory }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -159,9 +160,10 @@ const Inventory = ({ inventory, fetchInventory }) => {
       }
       await fetchInventory();
       handleCloseModal();
+      toast.success(modalType === 'add' ? 'Product added successfully!' : modalType === 'restock' ? 'Stock updated successfully!' : 'Product updated successfully!');
     } catch (err) {
       console.error("Operation failed", err.response?.data || err);
-      alert(`Failed to save data. Error: ${err.response?.data?.message || err.message}`);
+      toast.error(`Failed to save data. Error: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -180,9 +182,10 @@ const Inventory = ({ inventory, fetchInventory }) => {
       await addAdjustment(adjData);
       await fetchInventory();
       handleCloseAdjModal();
+      toast.success('Adjustment logged successfully!');
     } catch (err) {
       console.error("Adjustment failed", err.response?.data || err);
-      alert(`Failed to log adjustment. Error: ${err.response?.data?.message || err.message}`);
+      toast.error(`Failed to log adjustment. Error: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -191,8 +194,10 @@ const Inventory = ({ inventory, fetchInventory }) => {
       try {
         await deleteProduct(id);
         await fetchInventory();
+        toast.success('Product deleted successfully');
       } catch (err) {
         console.error("Delete failed", err);
+        toast.error('Failed to delete item');
       }
     }
   };

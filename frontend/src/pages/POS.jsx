@@ -3,6 +3,7 @@ import { ShoppingCart, Plus, Minus, Trash2, Printer, X, Receipt, Search, ScanBar
 import { processCheckout } from '../api';
 import TransactionHistory from './TransactionHistory';
 import BarcodeScanner from '../components/BarcodeScanner';
+import { toast } from '../context/ToastContext';
 
 const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
   const [cart, setCart] = useState([]);
@@ -33,7 +34,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       if (expiry < now) {
-        alert(`Cannot add expired product: ${product.name}`);
+        toast.warning(`Cannot add expired product: ${product.name}`);
         return;
       }
     }
@@ -99,9 +100,10 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       await fetchInventory();
       if (onSaleCompleted) onSaleCompleted();
       setShowReceipt(true);
+      toast.success("Purchase completed successfully!");
     } catch (error) {
       console.error("Checkout failed", error);
-      alert("Checkout failed. Check stock levels or backend connection.");
+      toast.error("Checkout failed. Check stock levels or backend connection.");
     } finally {
       setIsProcessing(false);
     }
@@ -523,8 +525,9 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
             const product = inventory.find(item => item.barcode === text);
             if (product) {
               addToCart(product);
+              toast.success(`Scanned: ${product.name}`);
             } else {
-              alert(`No product found with barcode: ${text}`);
+              toast.warning(`No product found with barcode: ${text}`);
             }
             setIsScanning(false);
           }} 

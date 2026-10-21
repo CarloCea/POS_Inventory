@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Plus, User, Trash2, Edit2, X } from 'lucide-react';
 import { getUsers, createUser, updateUser, deleteUser, forgotPassword, verifyOtp, resetPassword } from '../api';
+import { toast } from '../context/ToastContext';
 
 const Settings = () => {
   const [settings, setSettings] = useState({
@@ -44,7 +45,7 @@ const Settings = () => {
     e.preventDefault();
     localStorage.setItem('sariSariSettings', JSON.stringify(settings));
     window.dispatchEvent(new Event('settingsUpdated'));
-    alert('Settings saved successfully!');
+    toast.success('Settings saved successfully!');
   };
 
   const handleAddAccount = async () => {
@@ -54,25 +55,27 @@ const Settings = () => {
         setNewAccount({ username: '', email: '', password: '', role: 'Cashier' });
         setShowAddAccount(false);
         fetchAccounts();
+        toast.success('Account created successfully!');
       } catch (err) {
-        alert(err.response?.data?.message || 'Failed to create account');
+        toast.error(err.response?.data?.message || 'Failed to create account');
       }
     } else {
-      alert("Please fill in all required fields.");
+      toast.warning("Please fill in all required fields.");
     }
   };
 
   const handleDeleteAccount = async (id, role) => {
     if (role === 'Administrator' && accounts.filter(a => a.role === 'Administrator').length <= 1) {
-      alert("Cannot delete the last administrator account.");
+      toast.warning("Cannot delete the last administrator account.");
       return;
     }
     if (window.confirm("Are you sure you want to delete this account?")) {
       try {
         await deleteUser(id);
         fetchAccounts();
+        toast.success('Account deleted successfully');
       } catch (err) {
-        alert(err.response?.data?.message || 'Failed to delete account');
+        toast.error(err.response?.data?.message || 'Failed to delete account');
       }
     }
   };
@@ -95,9 +98,9 @@ const Settings = () => {
       setShowEditAccount(false);
       setEditingAccount(null);
       fetchAccounts();
-      alert("Account details updated successfully.");
+      toast.success("Account details updated successfully.");
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update account');
+      toast.error(err.response?.data?.message || 'Failed to update account');
     }
   };
 
