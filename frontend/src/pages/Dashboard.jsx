@@ -307,6 +307,7 @@ const Dashboard = ({ inventory = [] }) => {
                   <YAxis
                     allowDecimals={false}
                     domain={[0, dataMax => Math.max(Math.ceil(dataMax / 10) * 10, 10)]}
+                    tickFormatter={(val) => `₱${val.toLocaleString()}`}
                   />
                   <RechartsTooltip formatter={(value) => `₱${value.toLocaleString()}`} cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }} />
                   <Legend iconType="circle" />
