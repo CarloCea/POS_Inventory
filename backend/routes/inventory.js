@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const { syncProductBatches } = require('../utils/batchUtils');
 
 // Get all products
 router.get('/', async (req, res) => {
@@ -18,21 +19,29 @@ router.post('/', async (req, res) => {
     const { name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
     const totalCost = Number(price) + Number(profit);
     
+    const batches = Number(quantity) > 0 ? [{
+      quantity: Number(quantity),
+      expiryDate: expiryDate || '',
+      receivedDate: new Date()
+    }] : [];
+
     const product = new Product({
       name,
       category,
       netWeight,
       image,
-      quantity,
-      price,
-      profit,
+      quantity: Number(quantity) || 0,
+      price: Number(price),
+      profit: Number(profit),
       totalCost,
-      reorderPoint,
-      expiryDate,
+      reorderPoint: Number(reorderPoint) || 10,
+      expiryDate: expiryDate || '',
       unit,
-      barcode
+      barcode,
+      batches
     });
     
+    syncProductBatches(product);
     await product.save();
     res.status(201).json(product);
   } catch (err) {
@@ -48,32 +57,60 @@ router.post('/restock', async (req, res) => {
     const existingProduct = await Product.findOne({ name: name, price: Number(price) });
 
     if (existingProduct) {
-      existingProduct.quantity += Number(quantity);
-      existingProduct.profit = profit; 
+      if (!existingProduct.batches || existingProduct.batches.length === 0) {
+        if (existingProduct.quantity > 0) {
+          existingProduct.batches = [{
+            quantity: existingProduct.quantity,
+            expiryDate: existingProduct.expiryDate || '',
+            receivedDate: new Date()
+          }];
+        } else {
+          existingProduct.batches = [];
+        }
+      }
+
+      // Add the new batch with its unique expiration date
+      existingProduct.batches.push({
+        quantity: Number(quantity),
+        expiryDate: expiryDate || '',
+        receivedDate: new Date()
+      });
+
+      existingProduct.profit = Number(profit); 
       existingProduct.totalCost = totalCost;
-      existingProduct.reorderPoint = reorderPoint;
-      if (expiryDate !== undefined) existingProduct.expiryDate = expiryDate;
+      if (reorderPoint !== undefined) existingProduct.reorderPoint = Number(reorderPoint);
       if (unit !== undefined) existingProduct.unit = unit;
       if (barcode !== undefined) existingProduct.barcode = barcode;
       if (netWeight !== undefined) existingProduct.netWeight = netWeight;
-      if (image !== undefined) existingProduct.image = image;
+      if (image !== undefined && image !== '') existingProduct.image = image;
+
+      syncProductBatches(existingProduct);
       await existingProduct.save();
       return res.status(200).json(existingProduct);
     } else {
+      const batches = Number(quantity) > 0 ? [{
+        quantity: Number(quantity),
+        expiryDate: expiryDate || '',
+        receivedDate: new Date()
+      }] : [];
+
       const product = new Product({
         name,
         category,
         netWeight,
         image,
-        quantity,
-        price,
-        profit,
+        quantity: Number(quantity) || 0,
+        price: Number(price),
+        profit: Number(profit),
         totalCost,
-        reorderPoint,
-        expiryDate,
+        reorderPoint: Number(reorderPoint) || 10,
+        expiryDate: expiryDate || '',
         unit,
-        barcode
+        barcode,
+        batches
       });
+
+      syncProductBatches(product);
       await product.save();
       return res.status(201).json(product);
     }
@@ -91,14 +128,29 @@ router.put('/:id', async (req, res) => {
       updateData.totalCost = Number(price) + Number(profit);
     }
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    );
+    const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+
+    Object.assign(product, updateData);
+
+    // Keep batches in sync
+    if (!req.body.batches) {
+      if (!product.batches || product.batches.length <= 1) {
+        product.batches = product.quantity > 0 ? [{
+          quantity: product.quantity,
+          expiryDate: product.expiryDate || '',
+          receivedDate: new Date()
+        }] : [];
+      } else {
+        syncProductBatches(product);
+      }
+    } else {
+      syncProductBatches(product);
+    }
+
+    await product.save();
     res.json(product);
   } catch (err) {
     res.status(400).json({ message: err.message });

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const { deductFifo } = require('../utils/batchUtils');
 
 // Process POS checkout
 router.post('/checkout', async (req, res) => {
@@ -25,16 +26,8 @@ router.post('/checkout', async (req, res) => {
         return res.status(400).json({ message: `Not enough stock for ${item.name}` });
       }
       
-      if (product.expiryDate) {
-        const expiry = new Date(product.expiryDate);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0); // compare dates only
-        if (expiry < now) {
-          return res.status(400).json({ message: `Cannot sell expired product: ${item.name}` });
-        }
-      }
-      
-      product.quantity -= item.cartQuantity;
+      // Deduct quantity using First-In, First-Out (FIFO) across batches
+      deductFifo(product, item.cartQuantity);
       product.sold += item.cartQuantity;
       await product.save();
 

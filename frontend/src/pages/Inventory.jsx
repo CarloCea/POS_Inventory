@@ -11,6 +11,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('add');
+  const [activeItem, setActiveItem] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   
   // Adjustment Modal state
@@ -103,6 +104,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
 
   const handleOpenModal = (type, item = null) => {
     setModalType(type);
+    setActiveItem(item);
     setProfitType('fixed');
     setProfitPercent('');
     if (item) {
@@ -121,7 +123,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
         price: item.price,
         profit: item.profit,
         reorderPoint: item.reorderPoint,
-        expiryDate: item.expiryDate || '',
+        expiryDate: type === 'restock' ? '' : (item.expiryDate || ''),
         unit: item.unit || 'pcs',
         barcode: item.barcode || ''
       });
@@ -325,7 +327,41 @@ const Inventory = ({ inventory, fetchInventory }) => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A'}
+                  {item.expiryDate ? (
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {new Date(item.expiryDate).toLocaleDateString()}
+                      </div>
+                      {(() => {
+                        const activeBatches = (item.batches || []).filter(b => b.quantity > 0);
+                        if (activeBatches.length > 1) {
+                          return (
+                            <div className="group relative inline-block cursor-pointer mt-0.5">
+                              <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full hover:bg-blue-100 transition-colors">
+                                {activeBatches.length} batches (FIFO)
+                              </span>
+                              <div className="hidden group-hover:block absolute bottom-full left-0 mb-1 z-30 bg-gray-900 text-white text-xs rounded-xl py-2 px-3 shadow-xl min-w-[200px] pointer-events-none">
+                                <div className="font-bold text-[11px] text-gray-300 border-b border-gray-700 pb-1 mb-1.5">
+                                  Batch Expiration Schedule:
+                                </div>
+                                <div className="space-y-1">
+                                  {activeBatches.map((b, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-[10px]">
+                                      <span className="text-gray-300">Batch {idx + 1}: {b.quantity} {item.unit || 'pcs'}</span>
+                                      <span className="font-semibold text-white ml-2">
+                                        {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : 'No exp'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  ) : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₱{item.price.toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₱{item.profit.toFixed(2)}</td>
@@ -372,6 +408,19 @@ const Inventory = ({ inventory, fetchInventory }) => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+              {modalType === 'restock' && activeItem && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+                  <div className="font-bold mb-1 flex items-center justify-between">
+                    <span>Current Stock: {activeItem.quantity} {activeItem.unit || 'pcs'}</span>
+                    {activeItem.expiryDate && (
+                      <span className="text-blue-700 font-semibold">Active Expiry: {new Date(activeItem.expiryDate).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                  <p className="text-gray-600">
+                    If this new shipment has a different expiration date, enter it below. The system will track it as a new batch and sell older batches first (FIFO).
+                  </p>
+                </div>
+              )}
               <div className="flex flex-col items-center mb-2">
                 <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden mb-3 relative group">
                   {formData.image ? (
@@ -524,7 +573,9 @@ const Inventory = ({ inventory, fetchInventory }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {modalType === 'restock' ? 'New Batch Expiry Date (Optional)' : 'Expiry Date (Optional)'}
+                </label>
                 <input
                   type="date"
                   value={formData.expiryDate}

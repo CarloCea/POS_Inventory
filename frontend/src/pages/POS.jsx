@@ -34,8 +34,11 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       if (expiry < now) {
-        toast.warning(`Cannot add expired product: ${product.name}`);
-        return;
+        const validBatches = (product.batches || []).filter(b => b.quantity > 0 && (!b.expiryDate || new Date(b.expiryDate) >= now));
+        if (validBatches.length === 0) {
+          toast.warning(`Cannot add expired product: ${product.name}`);
+          return;
+        }
       }
     }
     setCart(prev => {
@@ -213,11 +216,16 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
             <div className="p-2 sm:p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 content-start">
               {filteredInventory.map(item => {
                 let isExpired = false;
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
                 if (item.expiryDate) {
                   const expiry = new Date(item.expiryDate);
-                  const now = new Date();
-                  now.setHours(0, 0, 0, 0);
-                  if (expiry < now) isExpired = true;
+                  if (expiry < now) {
+                    const validBatches = (item.batches || []).filter(b => b.quantity > 0 && (!b.expiryDate || new Date(b.expiryDate) >= now));
+                    if (validBatches.length === 0) {
+                      isExpired = true;
+                    }
+                  }
                 }
                 const isDisabled = item.quantity === 0 || isExpired;
                 return (

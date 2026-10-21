@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const StockAdjustment = require('../models/StockAdjustment');
 const Product = require('../models/Product');
+const { deductFifo } = require('../utils/batchUtils');
 
 // Get all adjustments
 router.get('/', async (req, res) => {
@@ -51,8 +52,8 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Deduct stock
-    product.quantity -= quantity;
+    // Deduct stock using FIFO
+    deductFifo(product, quantity);
 
     await adjustment.save();
     await product.save();
