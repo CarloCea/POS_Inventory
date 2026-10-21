@@ -230,67 +230,65 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                     </div>
                   )}
                   {item.image ? (
-                    <div className="relative w-full h-full min-h-[160px] sm:min-h-[180px] rounded-xl overflow-hidden flex flex-col justify-between">
-                      {/* Background Image */}
+                    <div className="relative w-full h-full flex flex-col justify-between flex-1 min-h-[150px] rounded-xl overflow-hidden">
+                      {/* Product Image Layer */}
                       <img 
                         src={item.image} 
                         alt={item.name} 
-                        className="absolute inset-0 w-full h-full object-cover" 
+                        className="absolute inset-0 w-full h-full object-contain p-2 transition-transform duration-300" 
                       />
+                      {/* Translucent Backdrop Overlay to keep description crisp and readable */}
+                      <div className="absolute inset-0 bg-white/80 backdrop-blur-[0.5px]" />
 
-                      {/* Top & Bottom Gradient Shadows for Text Legibility */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/60 pointer-events-none" />
-
-                      {/* Top Overlay: Category & Net Weight Badges */}
-                      <div className="relative z-10 p-2 flex flex-wrap gap-1 items-start">
-                        <span className="text-[9px] sm:text-[10px] font-semibold bg-black/50 text-white backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20">
-                          {item.category}
-                        </span>
-                        {item.netWeight && (
-                          <span className="text-[9px] sm:text-[10px] font-semibold bg-white/30 text-white backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20">
-                            {item.netWeight}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Bottom Overlay: Name, Unit, Price, Quantity */}
-                      <div className="relative z-10 p-2 sm:p-2.5 text-left text-white">
-                        <h3 className="font-bold text-white text-xs sm:text-sm leading-snug line-clamp-2 drop-shadow-md">
+                      {/* Centered Content: Name, Unit, Category & Net Wt. Pills */}
+                      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-1 sm:p-2">
+                        <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-snug line-clamp-3 mb-1 break-words">
                           {item.name}
                         </h3>
-                        <span className="text-white/80 text-[10px] sm:text-xs block mb-1">
+                        <span className="text-gray-500 text-[10px] sm:text-xs block font-normal mb-1.5">
                           / {item.unit || 'pcs'}
                         </span>
-
-                        <div className="flex justify-between items-center w-full pt-1 border-t border-white/20">
-                          <span className="font-extrabold text-white text-xs sm:text-sm drop-shadow">
-                            ₱{(item.totalCost || (item.price + (item.profit||0))).toFixed(2)}
+                        <div className="flex flex-wrap justify-center gap-1.5">
+                          <span className="text-gray-600 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2.5 py-0.5 bg-white/90 shadow-2xs">
+                            {item.category}
                           </span>
-                          <span className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold backdrop-blur-sm ${
-                            item.quantity > 0 ? 'bg-white/25 text-white' : 'bg-red-500/80 text-white'
-                          }`}>
-                            {item.quantity > 0 ? `${item.quantity} left` : 'Out'}
-                          </span>
+                          {item.netWeight && (
+                            <span className="text-gray-600 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2.5 py-0.5 bg-white/90 shadow-2xs">
+                              {item.netWeight}
+                            </span>
+                          )}
                         </div>
+                      </div>
+
+                      {/* Bottom Row: Price and Stock Left */}
+                      <div className="relative z-10 mt-auto pt-2.5 px-1 flex justify-between items-center w-full gap-1 border-t border-gray-100 shrink-0">
+                        <span className="font-bold text-gray-900 text-xs sm:text-sm">
+                          ₱{(item.totalCost || (item.price + (item.profit||0))).toFixed(2)}
+                        </span>
+                        <span className={`text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          item.quantity > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'
+                        }`}>
+                          {item.quantity > 0 ? `${item.quantity} left` : 'Out'}
+                        </span>
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col justify-between w-full h-full flex-1 min-h-[150px]">
                       <div className="flex-1 flex flex-col items-center justify-center text-center p-1 sm:p-2">
-                        <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-snug line-clamp-4 mb-1 break-words whitespace-normal">
+                        <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-snug line-clamp-4 mb-1 break-words whitespace-normal">
                           {item.name}
                         </h3>
-                        <span className="text-gray-500 text-[10px] block font-normal mb-1">/ {item.unit || 'pcs'}</span>
-                        <div className="flex flex-wrap justify-center gap-1 mt-1">
-                          <span className="text-gray-500 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2 py-0.5 bg-gray-50">{item.category}</span>
+                        <span className="text-gray-500 text-[10px] sm:text-xs block font-normal mb-1.5">/ {item.unit || 'pcs'}</span>
+                        <div className="flex flex-wrap justify-center gap-1.5">
+                          <span className="text-gray-600 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2.5 py-0.5 bg-gray-50">{item.category}</span>
                           {item.netWeight && (
-                            <span className="text-gray-500 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2 py-0.5 bg-gray-50">{item.netWeight}</span>
+                            <span className="text-gray-600 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2.5 py-0.5 bg-gray-50">{item.netWeight}</span>
                           )}
                         </div>
                       </div>
-                      <div className="mt-auto pt-3 flex flex-col sm:flex-row justify-between items-center w-full gap-1 border-t border-gray-100 shrink-0">
-                        <span className="font-bold text-gray-900 text-xs sm:text-sm">₱{item.totalCost?.toFixed(2) || (item.price + (item.profit||0)).toFixed(2)}</span>
-                        <span className={`text-[8px] sm:text-[10px] px-1 py-0.5 rounded-sm sm:rounded-full ${item.quantity > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'}`}>
+                      <div className="mt-auto pt-2.5 px-1 flex justify-between items-center w-full gap-1 border-t border-gray-100 shrink-0">
+                        <span className="font-bold text-gray-900 text-xs sm:text-sm">₱{(item.totalCost || (item.price + (item.profit||0))).toFixed(2)}</span>
+                        <span className={`text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium ${item.quantity > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'}`}>
                           {item.quantity > 0 ? `${item.quantity} left` : 'Out'}
                         </span>
                       </div>
