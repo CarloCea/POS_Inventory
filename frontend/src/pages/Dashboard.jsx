@@ -465,10 +465,10 @@ const Dashboard = ({ inventory = [] }) => {
                     <select
                       value={profitType}
                       onChange={e => handleProfitTypeChange(e.target.value)}
-                      className="inline-flex items-center px-2.5 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-700 text-xs font-semibold hover:bg-gray-100 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                      className="w-16 px-1.5 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-700 text-xs font-semibold hover:bg-gray-100 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-center"
                     >
-                      <option value="fixed">₱ Peso</option>
-                      <option value="percent">% Percent</option>
+                      <option value="fixed">₱</option>
+                      <option value="percent">%</option>
                     </select>
                   </div>
                   {profitType === 'percent' && (
