@@ -22,16 +22,26 @@ try {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    const identifier = (username || '').trim();
 
-
-    if (username === 'admin' && password === 'admin123') {
-      const adminExists = await User.findOne({ username: 'admin' });
+    // Default admin fallback if not yet in database
+    if ((identifier === 'admin' || identifier.toLowerCase() === 'admin@sarisari.com') && password === 'admin123') {
+      const adminExists = await User.findOne({ 
+        $or: [{ username: 'admin' }, { email: 'admin@sarisari.com' }] 
+      });
       if (!adminExists) {
         return res.json({ success: true, username: 'admin', role: 'Administrator' });
       }
     }
 
-    const user = await User.findOne({ username });
+    // Lookup user by either username or email (case-insensitive for email/username)
+    const user = await User.findOne({
+      $or: [
+        { username: { $regex: new RegExp(`^${identifier}$`, 'i') } },
+        { email: identifier.toLowerCase() }
+      ]
+    });
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -50,10 +60,18 @@ router.post('/login', async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const identifier = (email || '').trim();
+    
+    // Allow lookup by username or email
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: { $regex: new RegExp(`^${identifier}$`, 'i') } }
+      ]
+    });
     
     if (!user) {
-      return res.status(404).json({ message: 'User with this email not found' });
+      return res.status(404).json({ message: 'User with this username or email not found' });
     }
 
     // Generate 6 digit OTP
@@ -70,17 +88,17 @@ router.post('/forgot-password', async (req, res) => {
       try {
         await transporter.sendMail({
           from: '"Sari-Sari Inventory" <noreply@sarisari.com>',
-          to: email,
+          to: user.email,
           subject: 'Password Reset OTP',
           text: `Your OTP for password reset is: ${otp}. It will expire in 15 minutes.`,
         });
-        console.log(`OTP sent via email to ${email}`);
+        console.log(`OTP sent via email to ${user.email}`);
       } catch (emailErr) {
         console.error("Failed to send email, but OTP was generated:", emailErr);
       }
     }
 
-    res.json({ message: 'OTP sent successfully (Check console if email fails)' });
+    res.json({ message: 'OTP sent successfully (Check console if email fails)', email: user.email });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -89,7 +107,13 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const identifier = (email || '').trim();
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: { $regex: new RegExp(`^${identifier}$`, 'i') } }
+      ]
+    });
 
     if (!user || user.resetPasswordOtp !== otp || Date.now() > user.otpExpiry) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
@@ -104,7 +128,13 @@ router.post('/verify-otp', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const identifier = (email || '').trim();
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: { $regex: new RegExp(`^${identifier}$`, 'i') } }
+      ]
+    });
 
     if (!user || user.resetPasswordOtp !== otp || Date.now() > user.otpExpiry) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
