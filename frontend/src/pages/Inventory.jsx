@@ -317,8 +317,20 @@ const Inventory = ({ inventory, fetchInventory }) => {
     }
   };
 
-  const handleOpenAdjModal = (item) => {
-    setAdjData({ productId: item._id, productName: item.name, quantity: 1, reason: 'Damage', notes: '' });
+  const handleOpenAdjModal = (rawItem) => {
+    const item = rawItem.originalItem || rawItem;
+    const initialBatchId = rawItem.isBatchSplit && rawItem.batchId ? rawItem.batchId.toString() : '';
+    const activeBatches = (item.batches || []).filter(b => (Number(b.quantity) || 0) > 0);
+    setAdjData({
+      productId: item._id,
+      productName: item.name,
+      quantity: 1,
+      reason: 'Damage',
+      notes: '',
+      batches: activeBatches,
+      batchId: initialBatchId || (activeBatches.length > 0 ? (activeBatches[0]._id || '') : ''),
+      unit: item.unit || 'pcs'
+    });
     setShowAdjModal(true);
   };
 
@@ -329,7 +341,16 @@ const Inventory = ({ inventory, fetchInventory }) => {
   const handleAdjSubmit = async (e) => {
     e.preventDefault();
     try {
-      await addAdjustment(adjData);
+      const payload = {
+        productId: adjData.productId,
+        productName: adjData.productName,
+        quantity: Number(adjData.quantity) || 1,
+        reason: adjData.reason,
+        notes: adjData.notes,
+        batchId: adjData.batchId || undefined,
+        selectedBatchId: adjData.batchId || undefined
+      };
+      await addAdjustment(payload);
       await fetchInventory();
       window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseAdjModal();
@@ -567,7 +588,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
                         <button onClick={() => handleOpenModal('restock', item)} className="text-gray-400 hover:text-orange-600 transition-colors" title="Restock">
                           <Package className="w-5 h-5" />
                         </button>
-                        <button onClick={() => handleOpenAdjModal(item.originalItem || item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Adjust Stock">
+                        <button onClick={() => handleOpenAdjModal(item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Adjust Stock">
                           <MinusCircle className="w-5 h-5" />
                         </button>
                         <button onClick={() => handleOpenModal('edit', item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Edit">
@@ -916,6 +937,38 @@ const Inventory = ({ inventory, fetchInventory }) => {
                   <option value="Other">Other</option>
                 </select>
               </div>
+
+              {adjData.batches && adjData.batches.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Batch to Deduct From</label>
+                  <select
+                    value={adjData.batchId || ''}
+                    onChange={e => setAdjData({...adjData, batchId: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white"
+                  >
+                    <option value="">Auto-Deduct (Earliest Expiry)</option>
+                    {adjData.batches.map((batch, idx) => {
+                      const expStr = batch.expiryDate ? ` (Exp: ${new Date(batch.expiryDate).toLocaleDateString()})` : '';
+                      return (
+                        <option key={batch._id || idx} value={batch._id || ''}>
+                          Batch #{idx + 1} — In Stock: {batch.quantity} {adjData.unit || 'pcs'}{expStr}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {(() => {
+                    const selectedBatch = adjData.batches.find(b => (b._id && b._id.toString() === adjData.batchId?.toString()) || b._id === adjData.batchId);
+                    if (selectedBatch) {
+                      return (
+                        <p className="text-xs text-blue-600 mt-1 font-medium">
+                          Available in this batch: {selectedBatch.quantity} {adjData.unit || 'pcs'}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity (Deduct)</label>
@@ -923,6 +976,13 @@ const Inventory = ({ inventory, fetchInventory }) => {
                   type="number"
                   required
                   min="1"
+                  max={(() => {
+                    if (adjData.batchId) {
+                      const selectedBatch = adjData.batches?.find(b => (b._id && b._id.toString() === adjData.batchId?.toString()) || b._id === adjData.batchId);
+                      if (selectedBatch) return selectedBatch.quantity;
+                    }
+                    return undefined;
+                  })()}
                   value={adjData.quantity}
                   onChange={e => setAdjData({...adjData, quantity: Number(e.target.value)})}
                   className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"

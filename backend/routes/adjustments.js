@@ -17,27 +17,61 @@ router.get('/', async (req, res) => {
 // Create a new adjustment
 router.post('/', async (req, res) => {
   try {
-    const { productId, quantity, reason, notes } = req.body;
+    const { productId, quantity, reason, notes, batchId, selectedBatchId } = req.body;
+    const targetBatchId = batchId || selectedBatchId;
 
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    if (product.quantity < quantity) {
-      return res.status(400).json({ message: 'Not enough stock to adjust' });
+    const qtyNum = Number(quantity);
+    if (qtyNum <= 0) {
+      return res.status(400).json({ message: 'Adjustment quantity must be greater than zero' });
     }
 
-    // Calculate cost (cost of item without profit * quantity)
-    const cost = product.price * quantity;
+    if (product.quantity < qtyNum) {
+      return res.status(400).json({ message: 'Not enough total stock to adjust' });
+    }
 
-    // Check for existing log for this product and reason
-    let adjustment = await StockAdjustment.findOne({ productId: product._id, reason });
+    let cost = 0;
+    let adjustedBatchId = '';
+
+    // If specific batch is selected
+    if (targetBatchId && product.batches && product.batches.length > 0) {
+      const batch = product.batches.find(b => b._id && b._id.toString() === targetBatchId.toString());
+      if (!batch) {
+        return res.status(404).json({ message: 'Selected batch not found' });
+      }
+      if (batch.quantity < qtyNum) {
+        return res.status(400).json({ message: `Not enough stock in selected batch (Current: ${batch.quantity})` });
+      }
+
+      batch.quantity -= qtyNum;
+      const unitCost = Number(batch.price) || Number(product.price) || 0;
+      cost = unitCost * qtyNum;
+      adjustedBatchId = batch._id ? batch._id.toString() : targetBatchId.toString();
+
+      const { syncProductBatches } = require('../utils/batchUtils');
+      syncProductBatches(product);
+    } else {
+      // Auto-deduct using FEFO/FIFO across batches
+      const unitCost = Number(product.price) || 0;
+      cost = unitCost * qtyNum;
+      deductFifo(product, qtyNum);
+    }
+
+    // Check for existing log for this product, reason and batch
+    let adjustment = await StockAdjustment.findOne({ 
+      productId: product._id, 
+      reason,
+      batchId: adjustedBatchId || ''
+    });
 
     if (adjustment) {
-      adjustment.quantity += quantity;
+      adjustment.quantity += qtyNum;
       adjustment.cost = (adjustment.cost || 0) + cost;
-      adjustment.date = Date.now(); // update to latest date
+      adjustment.date = Date.now();
       if (notes) {
         adjustment.notes = adjustment.notes ? `${adjustment.notes} | ${notes}` : notes;
       }
@@ -45,15 +79,13 @@ router.post('/', async (req, res) => {
       adjustment = new StockAdjustment({
         productId: product._id,
         productName: product.name,
-        quantity,
+        quantity: qtyNum,
         reason,
         notes,
-        cost
+        cost,
+        batchId: adjustedBatchId || ''
       });
     }
-
-    // Deduct stock using FIFO
-    deductFifo(product, quantity);
 
     await adjustment.save();
     await product.save();

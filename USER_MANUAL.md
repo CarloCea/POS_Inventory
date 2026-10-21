@@ -101,7 +101,9 @@ Where you view and control all products and inventory batches in your store.
    * Click the pencil icon on any item row to edit prices, change photos, or update expiration dates.
    * **Select Batch to Edit**: If a product has multiple batches, you can select which batch you want to modify (quantity, cost, markup, or expiry date) or edit general product details.
 6. **Adjusting Stock (Damaged / Expired / Lost)**:
-   * Click the minus icon on any item row to manually record lost or damaged goods. This subtracts items from inventory and tracks them as store losses in Adjustments History.
+   * Click the minus icon on any item or batch row to manually record lost, expired, or damaged goods.
+   * **Select Batch to Deduct From**: Choose a specific batch to deduct from (its available stock and expiry date are shown), or keep **Auto-Deduct (Earliest Expiry)** to let the system automatically deduct units using FEFO.
+   * Subtraction is tracked with exact batch purchase cost in Adjustments History.
 7. **Deleting an Item**:
    * Click the red trash icon on any row to completely remove a product from the system.
 
