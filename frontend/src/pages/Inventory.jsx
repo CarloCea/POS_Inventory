@@ -296,7 +296,9 @@ const Inventory = ({ inventory, fetchInventory }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.barcode || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <span className="font-medium text-gray-900">{item.name}</span>
+                    <span className="font-medium text-gray-900">
+                      {item.name} {item.netWeight ? `(${item.netWeight})` : ''}
+                    </span>
                     {isExpired && enableNotifications ? (
                       <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
                         Expired
