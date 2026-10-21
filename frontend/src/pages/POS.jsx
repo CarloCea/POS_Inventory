@@ -306,12 +306,12 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                 >
                   ← Back to Products
                 </button>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
-                  <ShoppingCart className="w-5 h-5 mr-1.5" />
-                  Current Order
+                <h2 className="text-sm sm:text-base lg:text-xl font-bold text-gray-900 flex items-center">
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-1.5" />
+                  <span>Current Order</span>
                 </h2>
               </div>
-              <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+              <span className="bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded-full">
                 {cart.length} items
               </span>
             </div>
