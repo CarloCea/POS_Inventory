@@ -49,6 +49,15 @@ const AdminApp = () => {
   useEffect(() => {
     if (isLoggedIn) {
       fetchInventory();
+      const interval = setInterval(fetchInventory, 5000);
+      const onSync = () => fetchInventory();
+      window.addEventListener('focus', onSync);
+      window.addEventListener('inventoryUpdated', onSync);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('focus', onSync);
+        window.removeEventListener('inventoryUpdated', onSync);
+      };
     }
   }, [isLoggedIn]);
 
@@ -318,7 +327,7 @@ const AdminApp = () => {
             </div>
           ) : (
             <Routes>
-              <Route path="/" element={<Dashboard inventory={inventory} />} />
+              <Route path="/" element={<Dashboard inventory={inventory} fetchInventory={fetchInventory} />} />
               <Route path="/top-selling" element={<TopSelling inventory={inventory} />} />
               <Route path="/inventory" element={<Inventory inventory={inventory} fetchInventory={fetchInventory} />} />
               <Route path="/settings" element={<Settings />} />

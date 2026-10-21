@@ -54,13 +54,20 @@ const POSApp = () => {
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchInventory();
-      fetchSales(username);
-      
-      const interval = setInterval(() => {
+      const syncData = () => {
+        fetchInventory();
         fetchSales(username);
-      }, 30000);
-      return () => clearInterval(interval);
+      };
+
+      syncData();
+      const interval = setInterval(syncData, 5000);
+      window.addEventListener('focus', syncData);
+      window.addEventListener('inventoryUpdated', syncData);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('focus', syncData);
+        window.removeEventListener('inventoryUpdated', syncData);
+      };
     }
   }, [isLoggedIn, username]);
 

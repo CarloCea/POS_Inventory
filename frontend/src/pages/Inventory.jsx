@@ -159,6 +159,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
         await updateInventory(formData._id, formData);
       }
       await fetchInventory();
+      window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseModal();
       toast.success(modalType === 'add' ? 'Product added successfully!' : modalType === 'restock' ? 'Stock updated successfully!' : 'Product updated successfully!');
     } catch (err) {
@@ -181,6 +182,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
     try {
       await addAdjustment(adjData);
       await fetchInventory();
+      window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseAdjModal();
       toast.success('Adjustment logged successfully!');
     } catch (err) {
@@ -194,6 +196,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
       try {
         await deleteProduct(id);
         await fetchInventory();
+        window.dispatchEvent(new Event('inventoryUpdated'));
         toast.success('Product deleted successfully');
       } catch (err) {
         console.error("Delete failed", err);

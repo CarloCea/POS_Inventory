@@ -98,6 +98,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       setCart([]);
       setCash('');
       await fetchInventory();
+      window.dispatchEvent(new Event('inventoryUpdated'));
       if (onSaleCompleted) onSaleCompleted();
       setShowReceipt(true);
       toast.success("Purchase completed successfully!");

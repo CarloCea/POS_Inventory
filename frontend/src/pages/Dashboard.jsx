@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { toast } from '../context/ToastContext';
 
 
-const Dashboard = ({ inventory = [] }) => {
+const Dashboard = ({ inventory = [], fetchInventory }) => {
   const [stats, setStats] = useState({
     totalSales: 0,
     totalProfit: 0,
@@ -33,6 +33,15 @@ const Dashboard = ({ inventory = [] }) => {
 
   useEffect(() => {
     fetchStats();
+    const interval = setInterval(fetchStats, 5000);
+    const onSync = () => fetchStats();
+    window.addEventListener('focus', onSync);
+    window.addEventListener('inventoryUpdated', onSync);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onSync);
+      window.removeEventListener('inventoryUpdated', onSync);
+    };
   }, []);
 
   // Modal State
@@ -136,6 +145,8 @@ const Dashboard = ({ inventory = [] }) => {
         await restockProduct(formData);
       }
       await fetchStats();
+      if (fetchInventory) await fetchInventory();
+      window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseModal();
       toast.success(modalType === 'add' ? 'Product added successfully!' : 'Product restocked successfully!');
     } catch (err) {
