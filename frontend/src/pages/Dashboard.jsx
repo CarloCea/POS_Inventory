@@ -49,10 +49,55 @@ const Dashboard = ({ inventory = [] }) => {
   });
 
   const categories = ['All', ...new Set(inventory.map(item => item.category))];
+  const [profitType, setProfitType] = useState('fixed'); // 'fixed' (₱) or 'percent' (%)
+  const [profitPercent, setProfitPercent] = useState('');
+
+  const handleProfitTypeChange = (newType) => {
+    setProfitType(newType);
+    const costPrice = Number(formData.price) || 0;
+    if (newType === 'percent') {
+      if (costPrice > 0) {
+        const pct = ((Number(formData.profit) || 0) / costPrice) * 100;
+        setProfitPercent(pct ? parseFloat(pct.toFixed(2)).toString() : '');
+      } else {
+        setProfitPercent('');
+      }
+    }
+  };
+
+  const handlePriceChange = (val) => {
+    const cost = parseFloat(val) || 0;
+    let newProfit = formData.profit;
+    if (profitType === 'percent') {
+      const pct = parseFloat(profitPercent) || 0;
+      newProfit = parseFloat(((cost * pct) / 100).toFixed(2));
+    }
+    setFormData(prev => ({ ...prev, price: cost, profit: newProfit }));
+  };
+
+  const handleProfitFixedChange = (val) => {
+    const profitVal = parseFloat(val) || 0;
+    setFormData(prev => ({ ...prev, profit: profitVal }));
+    const cost = Number(formData.price) || 0;
+    if (cost > 0) {
+      setProfitPercent(parseFloat(((profitVal / cost) * 100).toFixed(2)).toString());
+    }
+  };
+
+  const handleProfitPercentChange = (val) => {
+    setProfitPercent(val);
+    const pct = parseFloat(val) || 0;
+    const cost = Number(formData.price) || 0;
+    const computedProfit = parseFloat(((cost * pct) / 100).toFixed(2));
+    setFormData(prev => ({ ...prev, profit: computedProfit }));
+  };
+
   const totalCostCalc = (Number(formData.price) || 0) + (Number(formData.profit) || 0);
 
   const handleOpenModal = (type) => {
     setModalType(type);
+    setProfitType('fixed');
+    setProfitPercent('');
     setFormData({
       name: '',
       category: '',
@@ -397,21 +442,73 @@ const Dashboard = ({ inventory = [] }) => {
                     step="0.01"
                     min="0"
                     value={formData.price}
-                    onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                    onChange={e => handlePriceChange(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profit (Markup) ₱</label>
-                  <input
-                    type="number"
-                    required
-                    step="0.01"
-                    min="0"
-                    value={formData.profit}
-                    onChange={e => setFormData({ ...formData, profit: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700">Profit (Markup)</label>
+                    <div className="inline-flex rounded-md border border-gray-200 bg-gray-100 p-0.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleProfitTypeChange('fixed')}
+                        className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                          profitType === 'fixed'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        ₱ (Amount)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleProfitTypeChange('percent')}
+                        className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                          profitType === 'percent'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        % (Percent)
+                      </button>
+                    </div>
+                  </div>
+
+                  {profitType === 'fixed' ? (
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 text-sm">₱</span>
+                      <input
+                        type="number"
+                        required
+                        step="0.01"
+                        min="0"
+                        value={formData.profit}
+                        onChange={e => handleProfitFixedChange(e.target.value)}
+                        className="w-full pl-7 pr-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          required
+                          step="0.01"
+                          min="0"
+                          value={profitPercent}
+                          onChange={e => handleProfitPercentChange(e.target.value)}
+                          className="w-full pr-8 pl-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="e.g. 20"
+                        />
+                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 text-sm">%</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Equivalent to: <span className="font-semibold text-gray-700">₱{(Number(formData.profit) || 0).toFixed(2)}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
