@@ -6,6 +6,37 @@ const Header = ({ handleLogout }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [storeName, setStoreName] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sariSariSettings');
+      return saved ? JSON.parse(saved).storeName || 'Sari-Sari Store' : 'Sari-Sari Store';
+    } catch {
+      return 'Sari-Sari Store';
+    }
+  });
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      try {
+        const saved = localStorage.getItem('sariSariSettings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.storeName) {
+            setStoreName(parsed.storeName);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    window.addEventListener('settingsUpdated', handleSettingsUpdate);
+    window.addEventListener('storage', handleSettingsUpdate);
+    return () => {
+      window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+      window.removeEventListener('storage', handleSettingsUpdate);
+    };
+  }, []);
 
   const isActive = (path) => currentPath === path;
 
@@ -24,7 +55,7 @@ const Header = ({ handleLogout }) => {
       <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-3 shrink-0">
           <ShoppingCart className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Sari-Sari Store</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{storeName}</h1>
         </div>
 
         {/* Desktop Nav */}
