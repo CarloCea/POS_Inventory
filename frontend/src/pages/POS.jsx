@@ -15,7 +15,8 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  
+  const [mobileView, setMobileView] = useState('products'); // 'products' or 'cart'
+
   const categories = ['All', ...new Set(inventory.map(i => i.category).filter(Boolean))];
   const filteredInventory = inventory.filter(item => {
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
@@ -105,38 +106,72 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4 h-full flex flex-col gap-2 sm:gap-4 overflow-hidden">
       
       {/* POS Sub-navigation */}
-      <div className="flex space-x-4 border-b pb-2 shrink-0">
-        <button 
-          onClick={() => setActiveTab('checkout')}
-          className={`font-semibold px-4 py-2 rounded-t-xl transition-colors ${activeTab === 'checkout' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-        >
-          Point of Sale
-        </button>
-        <button 
-          onClick={() => setActiveTab('history')}
-          className={`font-semibold px-4 py-2 rounded-t-xl transition-colors ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-        >
-          Transaction History
-        </button>
+      <div className="flex justify-between items-center border-b pb-2 shrink-0 gap-2">
+        <div className="flex space-x-2">
+          <button 
+            onClick={() => setActiveTab('checkout')}
+            className={`font-semibold px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-lg sm:rounded-t-xl transition-colors ${activeTab === 'checkout' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            Point of Sale
+          </button>
+          <button 
+            onClick={() => setActiveTab('history')}
+            className={`font-semibold px-3 sm:px-4 py-1.5 text-xs sm:text-sm rounded-lg sm:rounded-t-xl transition-colors ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            History
+          </button>
+        </div>
+
+        {activeTab === 'checkout' && (
+          <div className="lg:hidden flex bg-gray-100 p-0.5 rounded-lg border border-gray-200 text-xs">
+            <button
+              onClick={() => setMobileView('products')}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                mobileView === 'products'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Products
+            </button>
+            <button
+              onClick={() => setMobileView('cart')}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center space-x-1 ${
+                mobileView === 'cart'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <span>Cart</span>
+              {cart.length > 0 && (
+                <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-1">
+                  {cart.reduce((sum, item) => sum + item.cartQuantity, 0)}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {activeTab === 'checkout' ? (
-        <div className="flex flex-col lg:flex-row gap-4 md:gap-6 flex-1 min-h-0">
+        <div className="flex flex-col lg:flex-row gap-3 md:gap-6 flex-1 min-h-0 overflow-hidden">
           {/* Product List */}
-          <div className="w-full lg:w-2/3 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col flex-1 lg:h-full overflow-hidden min-h-0">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-xl font-bold text-gray-900">Products</h2>
+          <div className={`w-full lg:w-2/3 bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 flex flex-col flex-1 h-full overflow-hidden min-h-0 ${
+            mobileView === 'cart' ? 'hidden lg:flex' : 'flex'
+          }`}>
+            <div className="px-3 sm:px-6 py-2.5 sm:py-4 border-b border-gray-100 shrink-0">
+              <div className="flex justify-between items-center mb-2 sm:mb-3">
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">Products</h2>
                 <button 
                   onClick={() => setIsScanning(true)}
-                  className="flex items-center space-x-1 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition-colors"
+                  className="flex items-center space-x-1 bg-blue-50 text-blue-600 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl hover:bg-blue-100 transition-colors"
                 >
                   <ScanBarcode className="w-4 h-4" />
-                  <span className="text-sm font-medium">Scan</span>
+                  <span className="text-xs sm:text-sm font-medium">Scan</span>
                 </button>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 mb-3">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2 sm:mb-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
@@ -144,18 +179,18 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                     placeholder="Search by name or barcode..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                    className="w-full pl-9 pr-4 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Category Filter */}
-              <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
+              <div className="flex space-x-1.5 sm:space-x-2 overflow-x-auto pb-1 scrollbar-hide">
                 {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    className={`px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
                       selectedCategory === cat 
                         ? 'bg-blue-600 text-white shadow-sm' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -167,7 +202,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
               </div>
             </div>
 
-            <div className="p-2 sm:p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-4 gap-2 sm:gap-4 content-start">
+            <div className="p-2 sm:p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 content-start">
               {filteredInventory.map(item => {
                 let isExpired = false;
                 if (item.expiryDate) {
@@ -240,15 +275,42 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                 </div>
               )})}
             </div>
+
+            {/* Mobile Bottom Order Action Bar */}
+            {cart.length > 0 && (
+              <div className="lg:hidden p-2.5 bg-blue-50 border-t border-blue-100 flex justify-between items-center shrink-0">
+                <div className="text-xs">
+                  <span className="text-gray-600 block">Total ({cart.reduce((sum, item) => sum + item.cartQuantity, 0)} items)</span>
+                  <span className="font-bold text-blue-700 text-sm">₱{cartTotal.toFixed(2)}</span>
+                </div>
+                <button
+                  onClick={() => setMobileView('cart')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1 transition-colors"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span>View Order →</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Cart/Checkout */}
-          <div className="w-full lg:w-1/3 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col h-[40vh] lg:h-full overflow-hidden shrink-0">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Current Order
-              </h2>
+          <div className={`w-full lg:w-1/3 bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden shrink-0 ${
+            mobileView === 'products' ? 'hidden lg:flex' : 'flex'
+          }`}>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setMobileView('products')}
+                  className="lg:hidden text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md font-semibold hover:bg-gray-200"
+                >
+                  ← Back to Products
+                </button>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+                  <ShoppingCart className="w-5 h-5 mr-1.5" />
+                  Current Order
+                </h2>
+              </div>
               <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
                 {cart.length} items
               </span>

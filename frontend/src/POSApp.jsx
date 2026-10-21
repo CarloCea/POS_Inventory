@@ -306,27 +306,29 @@ const POSApp = () => {
 
   return (
     <div className="h-[100dvh] bg-gray-50 flex flex-col overflow-hidden">
-      {/* POS  Header */}
-      <header className="bg-white shadow-md relative z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3 shrink-0">
-            <Monitor className="w-8 h-8 text-blue-600" />
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">POS Terminal</h1>
-
-            </div>
+      {/* POS Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 relative z-40 shrink-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex justify-between items-center gap-2">
+          <div className="flex items-center space-x-2 shrink-0">
+            <Monitor className="w-6 h-6 text-blue-600" />
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">POS Terminal</h1>
           </div>
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
             <div className="flex flex-col text-right">
-              <span className="text-sm text-gray-500 font-medium">Cashier: <span className="text-gray-800">{username}</span></span>
-              <span className="text-xs text-gray-500">Today's Sales: <span className="font-bold text-green-600">₱{todaySales.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></span>
+              <span className="text-xs sm:text-sm text-gray-600 font-medium truncate max-w-[120px] sm:max-w-none">
+                {username}
+              </span>
+              <span className="text-[10px] sm:text-xs text-gray-500">
+                Today: <span className="font-bold text-green-600">₱{todaySales.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              </span>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-1 text-red-500 hover:text-red-700 font-medium border-l pl-4 border-gray-200"
+              className="flex items-center space-x-1 text-red-500 hover:text-red-700 font-medium border-l pl-2 sm:pl-3 border-gray-200"
+              title="Logout"
             >
-              <LogOut className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="hidden md:inline">Logout</span>
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline text-sm">Logout</span>
             </button>
           </div>
         </div>
