@@ -63,10 +63,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Restock product (records new batch with its own cost, markup, and expiry date)
+// Restock product (records new batch with its own cost, markup, and expiry date, or restocks existing batch)
 router.post('/restock', async (req, res) => {
   try {
-    const { _id, productId, name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
+    const { _id, productId, name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode, batchId, selectedBatchId } = req.body;
+    const targetBatchId = batchId || selectedBatchId;
     
     // Rule 1: Expiration date is strictly mandatory when receiving/restocking items
     if (!expiryDate || String(expiryDate).trim() === '') {
@@ -111,16 +112,30 @@ router.post('/restock', async (req, res) => {
         }
       }
 
-      // Rule 3: Record new batch/lot entry with its own cost, markup, and expiry date
-      existingProduct.batches.push({
-        quantity: qtyNum,
-        expiryDate: String(expiryDate).trim(),
-        price: costNum,
-        profit: profitNum,
-        totalCost: totalCost,
-        receivedDate: new Date(),
-        isExpiredLogged: false
-      });
+      // Check if restocking an existing batch
+      let existingBatch = null;
+      if (targetBatchId && targetBatchId !== 'new') {
+        existingBatch = existingProduct.batches.find(b => b._id && b._id.toString() === targetBatchId.toString());
+      }
+
+      if (existingBatch) {
+        existingBatch.quantity = (Number(existingBatch.quantity) || 0) + qtyNum;
+        if (costNum > 0) existingBatch.price = costNum;
+        if (profitNum > 0) existingBatch.profit = profitNum;
+        existingBatch.totalCost = (Number(existingBatch.price) || 0) + (Number(existingBatch.profit) || 0);
+        if (expiryDate) existingBatch.expiryDate = String(expiryDate).trim();
+      } else {
+        // Rule 3: Record new batch/lot entry with its own cost, markup, and expiry date
+        existingProduct.batches.push({
+          quantity: qtyNum,
+          expiryDate: String(expiryDate).trim(),
+          price: costNum,
+          profit: profitNum,
+          totalCost: totalCost,
+          receivedDate: new Date(),
+          isExpiredLogged: false
+        });
+      }
 
       if (category) existingProduct.category = category;
       if (reorderPoint !== undefined) existingProduct.reorderPoint = Number(reorderPoint);
@@ -169,37 +184,42 @@ router.post('/restock', async (req, res) => {
   }
 });
 
-// Update product
+// Update product or specific batch
 router.put('/:id', async (req, res) => {
   try {
-    const { price, profit } = req.body;
-    const updateData = { ...req.body };
-    if (price !== undefined && profit !== undefined) {
-      updateData.totalCost = Number(price) + Number(profit);
-    }
+    const { price, profit, quantity, expiryDate, batchId, selectedBatchId } = req.body;
+    const targetBatchId = batchId || selectedBatchId;
 
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    Object.assign(product, updateData);
+    const updateData = { ...req.body };
+    delete updateData.batchId;
+    delete updateData.selectedBatchId;
 
-    // Keep batches in sync
-    if (!req.body.batches) {
-      if (!product.batches || product.batches.length <= 1) {
-        product.batches = product.quantity > 0 ? [{
-          quantity: product.quantity,
-          expiryDate: product.expiryDate || '',
-          receivedDate: new Date()
-        }] : [];
-      } else {
-        syncProductBatches(product);
-      }
-    } else {
-      syncProductBatches(product);
+    if (price !== undefined && profit !== undefined) {
+      updateData.totalCost = Number(price) + Number(profit);
     }
 
+    Object.assign(product, updateData);
+
+    // If editing a specific batch
+    if (targetBatchId && product.batches && product.batches.length > 0) {
+      const batch = product.batches.find(b => b._id && b._id.toString() === targetBatchId.toString());
+      if (batch) {
+        if (quantity !== undefined && quantity !== '') batch.quantity = Number(quantity);
+        if (price !== undefined && price !== '') batch.price = Number(price);
+        if (profit !== undefined && profit !== '') batch.profit = Number(profit);
+        if (price !== undefined || profit !== undefined) {
+          batch.totalCost = (Number(batch.price) || 0) + (Number(batch.profit) || 0);
+        }
+        if (expiryDate !== undefined && expiryDate !== '') batch.expiryDate = String(expiryDate).trim();
+      }
+    }
+
+    syncProductBatches(product);
     await product.save();
     res.json(product);
   } catch (err) {

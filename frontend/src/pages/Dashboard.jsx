@@ -132,6 +132,7 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
     if (!prod) return;
     setProfitType('fixed');
     setProfitPercent('');
+    const activeBatches = (prod.batches || []).filter(b => (Number(b.quantity) || 0) > 0);
     setFormData({
       _id: prod._id,
       name: prod.name,
@@ -141,10 +142,44 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
       image: prod.image || '',
       unit: prod.unit || 'pcs',
       reorderPoint: prod.reorderPoint !== undefined ? prod.reorderPoint : 10,
+      batches: activeBatches,
+      selectedBatchId: 'new',
       quantity: '',
       price: '',
       profit: '',
       expiryDate: ''
+    });
+  };
+
+  const handleBatchChangeInRestock = (batchId) => {
+    setFormData(prev => {
+      if (batchId === 'new' || !batchId) {
+        return {
+          ...prev,
+          selectedBatchId: 'new',
+          quantity: '',
+          price: '',
+          profit: '',
+          expiryDate: ''
+        };
+      }
+      const found = (prev.batches || []).find(b => (b._id && b._id.toString() === batchId.toString()) || b._id === batchId);
+      if (found) {
+        const cost = Number(found.price) || 0;
+        const prof = Number(found.profit) || 0;
+        if (cost > 0) {
+          setProfitPercent(parseFloat(((prof / cost) * 100).toFixed(2)).toString());
+        }
+        return {
+          ...prev,
+          selectedBatchId: batchId,
+          quantity: '',
+          price: found.price,
+          profit: found.profit,
+          expiryDate: found.expiryDate || ''
+        };
+      }
+      return { ...prev, selectedBatchId: batchId };
     });
   };
 
@@ -175,7 +210,9 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
         quantity: Number(formData.quantity) || 0,
         price: Number(formData.price) || 0,
         profit: Number(formData.profit) || 0,
-        reorderPoint: Number(formData.reorderPoint) || 10
+        reorderPoint: Number(formData.reorderPoint) || 10,
+        selectedBatchId: formData.selectedBatchId || undefined,
+        batchId: formData.selectedBatchId || undefined
       };
       if (modalType === 'add') {
         await addProduct(payload);
@@ -429,21 +466,40 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
                 </div>
               </div>
               {modalType === 'restock' ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Product to Restock *</label>
-                  <select
-                    value={formData._id || ''}
-                    onChange={e => handleRestockProductSelect(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                    required
-                  >
-                    <option value="">-- Choose an Existing Product --</option>
-                    {inventory.map(item => (
-                      <option key={item._id} value={item._id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Product to Restock *</label>
+                    <select
+                      value={formData._id || ''}
+                      onChange={e => handleRestockProductSelect(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                      required
+                    >
+                      <option value="">-- Choose an Existing Product --</option>
+                      {inventory.map(item => (
+                        <option key={item._id} value={item._id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formData._id && formData.batches && formData.batches.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Batch to Restock</label>
+                      <select
+                        value={formData.selectedBatchId || 'new'}
+                        onChange={e => handleBatchChangeInRestock(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                      >
+                        <option value="new">+ Create New Batch</option>
+                        {formData.batches.map((batch, idx) => (
+                          <option key={batch._id || idx} value={batch._id || idx}>
+                            Batch #{idx + 1} — Current: {batch.quantity} {formData.unit || 'pcs'} {batch.expiryDate ? `(Exp: ${new Date(batch.expiryDate).toLocaleDateString()})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>

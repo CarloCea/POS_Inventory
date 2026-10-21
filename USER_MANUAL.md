@@ -86,10 +86,10 @@ Where you view and control all products and inventory batches in your store.
 2. **Mandatory Expiration Date & Automated Daily Expiry Audit**:
    * **Strict Expiry Required**: An expiration date is required whenever adding or restocking products.
    * **Automated Expiry Log**: A background job runs automatically every day. When a batch reaches or passes its expiration date, the system immediately marks it as non-sellable (0 stock) and automatically creates an entry in `stock_logs` with type `EXPIRED`, batch ID, lost quantity, and financial cost.
-3. **Restocking Form Autofill**:
+3. **Restocking Form Autofill & Batch Selection**:
    * When restocking via **+ Restock** (or clicking the restock icon on any row), pick the product from the dropdown.
-   * The system automatically pre-fills the **Barcode** and **Category** from the product's most recent record.
-   * Fields such as **Cost Price**, **Profit Markup**, **Expiration Date**, and **Quantity** are left open for fresh manual entry.
+   * **Select Batch to Restock**: You can choose **+ Create New Batch** or select an existing active batch to add incoming units directly to that specific batch.
+   * If creating a new batch, barcode and category are pre-filled while cost, markup, expiration date, and quantity are open for manual entry. If an existing batch is selected, its cost, markup, and expiry date are automatically loaded.
 4. **Adding a New Item (+ Add Item)**:
    * **Photo**: Upload a picture from your computer or snap one using your phone camera. If you want to remove the picture, hover your mouse over the picture box and click the red trash can icon.
    * **Item Name & Net Weight**: Type the product name and package size (e.g., `500ml`, `25g`).
@@ -97,8 +97,9 @@ Where you view and control all products and inventory batches in your store.
    * **Pricing**: Type your purchase cost and your profit markup (choose either fixed Peso `₱` or percentage `%`). The selling price is calculated automatically.
    * **Stock & Alerts**: Set starting quantity and the low-stock warning threshold.
    * **Mandatory Expiry**: Select the expiration date for the initial batch.
-5. **Editing an Item**:
+5. **Editing an Item & Batch Selection**:
    * Click the pencil icon on any item row to edit prices, change photos, or update expiration dates.
+   * **Select Batch to Edit**: If a product has multiple batches, you can select which batch you want to modify (quantity, cost, markup, or expiry date) or edit general product details.
 6. **Adjusting Stock (Damaged / Expired / Lost)**:
    * Click the minus icon on any item row to manually record lost or damaged goods. This subtracts items from inventory and tracks them as store losses in Adjustments History.
 7. **Deleting an Item**:

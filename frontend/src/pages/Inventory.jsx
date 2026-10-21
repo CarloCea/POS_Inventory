@@ -103,14 +103,20 @@ const Inventory = ({ inventory, fetchInventory }) => {
     setFormData(prev => ({ ...prev, profit: computedProfit }));
   };
 
-  const handleOpenModal = (type, item = null) => {
+  const handleOpenModal = (type, rawItem = null) => {
     setModalType(type);
     setProfitType('fixed');
     setProfitPercent('');
-    if (item) {
+    if (rawItem) {
+      const item = rawItem.originalItem || rawItem;
+      const initialBatchId = rawItem.isBatchSplit && rawItem.batchId ? rawItem.batchId.toString() : '';
+      const activeBatches = (item.batches || []).filter(b => (Number(b.quantity) || 0) > 0);
+
       if (type === 'restock') {
-        // Business Rule 2: Autofill ONLY barcode and category from most recent record,
-        // leaving cost_price, markup, expiration_date, and quantity open for manual entry.
+        let initialBatch = null;
+        if (initialBatchId) {
+          initialBatch = activeBatches.find(b => b._id && b._id.toString() === initialBatchId);
+        }
         setFormData({
           _id: item._id,
           name: item.name,
@@ -120,30 +126,46 @@ const Inventory = ({ inventory, fetchInventory }) => {
           image: item.image || '',
           unit: item.unit || 'pcs',
           reorderPoint: item.reorderPoint !== undefined ? item.reorderPoint : 10,
+          batches: activeBatches,
+          selectedBatchId: initialBatch ? (initialBatch._id || 'new') : 'new',
           quantity: '',
-          price: '',
-          profit: '',
-          expiryDate: ''
+          price: initialBatch ? initialBatch.price : '',
+          profit: initialBatch ? initialBatch.profit : '',
+          expiryDate: initialBatch ? (initialBatch.expiryDate || '') : ''
         });
       } else {
-        const cost = Number(item.price) || 0;
-        const prof = Number(item.profit) || 0;
+        let initialBatch = null;
+        if (initialBatchId) {
+          initialBatch = activeBatches.find(b => b._id && b._id.toString() === initialBatchId);
+        } else if (activeBatches.length > 0) {
+          initialBatch = activeBatches[0];
+        }
+
+        const cost = initialBatch ? (Number(initialBatch.price) || 0) : (Number(item.price) || 0);
+        const prof = initialBatch ? (Number(initialBatch.profit) || 0) : (Number(item.profit) || 0);
         if (cost > 0) {
           setProfitPercent(parseFloat(((prof / cost) * 100).toFixed(2)).toString());
         }
+
         setFormData({
           _id: item._id,
           name: item.name,
           category: item.category,
           netWeight: item.netWeight || '',
           image: item.image || '',
-          quantity: item.quantity,
-          price: item.price,
-          profit: item.profit,
+          batches: activeBatches,
+          selectedBatchId: initialBatch ? (initialBatch._id || '') : '',
+          quantity: initialBatch ? initialBatch.quantity : item.quantity,
+          price: initialBatch ? initialBatch.price : item.price,
+          profit: initialBatch ? initialBatch.profit : item.profit,
           reorderPoint: item.reorderPoint,
-          expiryDate: item.expiryDate || '',
+          expiryDate: initialBatch ? (initialBatch.expiryDate || '') : (item.expiryDate || ''),
           unit: item.unit || 'pcs',
-          barcode: item.barcode || ''
+          barcode: item.barcode || '',
+          basePrice: item.price,
+          baseProfit: item.profit,
+          baseExpiryDate: item.expiryDate || '',
+          totalQuantity: item.quantity
         });
       }
     } else {
@@ -153,6 +175,8 @@ const Inventory = ({ inventory, fetchInventory }) => {
         category: '',
         netWeight: '',
         image: '',
+        batches: [],
+        selectedBatchId: 'new',
         quantity: '',
         price: '',
         profit: '',
@@ -170,6 +194,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
     if (!prod) return;
     setProfitType('fixed');
     setProfitPercent('');
+    const activeBatches = (prod.batches || []).filter(b => (Number(b.quantity) || 0) > 0);
     // Business Rule 2: Autofill ONLY barcode and category from most recent record,
     // leaving cost_price, markup, expiration_date, and quantity open for manual entry.
     setFormData({
@@ -181,10 +206,76 @@ const Inventory = ({ inventory, fetchInventory }) => {
       image: prod.image || '',
       unit: prod.unit || 'pcs',
       reorderPoint: prod.reorderPoint !== undefined ? prod.reorderPoint : 10,
+      batches: activeBatches,
+      selectedBatchId: 'new',
       quantity: '',
       price: '',
       profit: '',
       expiryDate: ''
+    });
+  };
+
+  const handleBatchChangeInEdit = (batchId) => {
+    setFormData(prev => {
+      if (!batchId) {
+        return {
+          ...prev,
+          selectedBatchId: '',
+          quantity: prev.totalQuantity !== undefined ? prev.totalQuantity : prev.quantity,
+          price: prev.basePrice !== undefined ? prev.basePrice : prev.price,
+          profit: prev.baseProfit !== undefined ? prev.baseProfit : prev.profit,
+          expiryDate: prev.baseExpiryDate !== undefined ? prev.baseExpiryDate : prev.expiryDate
+        };
+      }
+      const found = (prev.batches || []).find(b => (b._id && b._id.toString() === batchId.toString()) || b._id === batchId);
+      if (found) {
+        const cost = Number(found.price) || 0;
+        const prof = Number(found.profit) || 0;
+        if (cost > 0) {
+          setProfitPercent(parseFloat(((prof / cost) * 100).toFixed(2)).toString());
+        }
+        return {
+          ...prev,
+          selectedBatchId: batchId,
+          quantity: found.quantity,
+          price: found.price,
+          profit: found.profit,
+          expiryDate: found.expiryDate || ''
+        };
+      }
+      return { ...prev, selectedBatchId: batchId };
+    });
+  };
+
+  const handleBatchChangeInRestock = (batchId) => {
+    setFormData(prev => {
+      if (batchId === 'new' || !batchId) {
+        return {
+          ...prev,
+          selectedBatchId: 'new',
+          quantity: '',
+          price: '',
+          profit: '',
+          expiryDate: ''
+        };
+      }
+      const found = (prev.batches || []).find(b => (b._id && b._id.toString() === batchId.toString()) || b._id === batchId);
+      if (found) {
+        const cost = Number(found.price) || 0;
+        const prof = Number(found.profit) || 0;
+        if (cost > 0) {
+          setProfitPercent(parseFloat(((prof / cost) * 100).toFixed(2)).toString());
+        }
+        return {
+          ...prev,
+          selectedBatchId: batchId,
+          quantity: '',
+          price: found.price,
+          profit: found.profit,
+          expiryDate: found.expiryDate || ''
+        };
+      }
+      return { ...prev, selectedBatchId: batchId };
     });
   };
 
@@ -205,7 +296,9 @@ const Inventory = ({ inventory, fetchInventory }) => {
         quantity: Number(formData.quantity) || 0,
         price: Number(formData.price) || 0,
         profit: Number(formData.profit) || 0,
-        reorderPoint: Number(formData.reorderPoint) || 10
+        reorderPoint: Number(formData.reorderPoint) || 10,
+        selectedBatchId: formData.selectedBatchId || undefined,
+        batchId: formData.selectedBatchId || undefined
       };
       if (modalType === 'add') {
         await addProduct(payload);
@@ -471,13 +564,13 @@ const Inventory = ({ inventory, fetchInventory }) => {
                     <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900">₱{item.totalCost.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-3">
-                        <button onClick={() => handleOpenModal('restock', item.originalItem || item)} className="text-gray-400 hover:text-orange-600 transition-colors" title="Restock">
+                        <button onClick={() => handleOpenModal('restock', item)} className="text-gray-400 hover:text-orange-600 transition-colors" title="Restock">
                           <Package className="w-5 h-5" />
                         </button>
                         <button onClick={() => handleOpenAdjModal(item.originalItem || item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Adjust Stock">
                           <MinusCircle className="w-5 h-5" />
                         </button>
-                        <button onClick={() => handleOpenModal('edit', item.originalItem || item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Edit">
+                        <button onClick={() => handleOpenModal('edit', item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Edit">
                           <Edit2 className="w-5 h-5" />
                         </button>
                         <button onClick={() => handleDelete((item.originalItem || item)._id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Delete">
@@ -551,39 +644,77 @@ const Inventory = ({ inventory, fetchInventory }) => {
                 </div>
               </div>
               {modalType === 'restock' ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Product to Restock *</label>
-                  <select
-                    value={formData._id || ''}
-                    onChange={e => handleRestockProductSelect(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors font-medium text-gray-900 bg-white"
-                    required
-                  >
-                    <option value="">-- Choose an Existing Product --</option>
-                    {inventory.map(item => (
-                      <option key={item._id} value={item._id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Product to Restock *</label>
+                    <select
+                      value={formData._id || ''}
+                      onChange={e => handleRestockProductSelect(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors font-medium text-gray-900 bg-white"
+                      required
+                    >
+                      <option value="">-- Choose an Existing Product --</option>
+                      {inventory.map(item => (
+                        <option key={item._id} value={item._id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {formData._id && formData.batches && formData.batches.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Batch to Restock</label>
+                      <select
+                        value={formData.selectedBatchId || 'new'}
+                        onChange={e => handleBatchChangeInRestock(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white"
+                      >
+                        <option value="new">+ Create New Batch</option>
+                        {formData.batches.map((batch, idx) => (
+                          <option key={batch._id || idx} value={batch._id || idx}>
+                            Batch #{idx + 1} — Current: {batch.quantity} {formData.unit || 'pcs'} {batch.expiryDate ? `(Exp: ${new Date(batch.expiryDate).toLocaleDateString()})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})}
-                    disabled={modalType === 'edit'}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100"
-                    list="inventory-names"
-                  />
-                  <datalist id="inventory-names">
-                    {[...new Set(inventory.map(i => i.name))].map(name => (
-                      <option key={name} value={name} />
-                    ))}
-                  </datalist>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})}
+                      disabled={modalType === 'edit'}
+                      className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100"
+                      list="inventory-names"
+                    />
+                    <datalist id="inventory-names">
+                      {[...new Set(inventory.map(i => i.name))].map(name => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
+                  </div>
+                  {modalType === 'edit' && formData.batches && formData.batches.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Batch to Edit</label>
+                      <select
+                        value={formData.selectedBatchId || ''}
+                        onChange={e => handleBatchChangeInEdit(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 bg-white"
+                      >
+                        <option value="">-- All / General Product Details --</option>
+                        {formData.batches.map((batch, idx) => (
+                          <option key={batch._id || idx} value={batch._id || idx}>
+                            Batch #{idx + 1} — Qty: {batch.quantity} {formData.unit || 'pcs'} {batch.expiryDate ? `(Exp: ${new Date(batch.expiryDate).toLocaleDateString()})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
               
