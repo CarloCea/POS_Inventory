@@ -8,14 +8,16 @@ const crypto = require('crypto');
 let transporter;
 try {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Port 465 SSL (works reliably on Render/cloud hosting without STARTTLS blocking)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    pool: true,
-    maxConnections: 3,
-    socketTimeout: 10000,
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 8000,
   });
 } catch (e) {
   console.log("Email transporter not initialized (SMTP config missing or invalid).");
@@ -86,10 +88,10 @@ router.post('/forgot-password', async (req, res) => {
 
     console.log(`\n\n--- OTP for ${cleanEmail}: ${otp} ---\n\n`);
 
-    // Deliver email via SMTP
+    // Deliver email via SMTP with a fast 6-second timeout
     if (transporter && process.env.SMTP_USER) {
       try {
-        await transporter.sendMail({
+        const sendPromise = transporter.sendMail({
           from: `"Sari-Sari Store" <${process.env.SMTP_USER}>`,
           to: user.email,
           subject: 'Password Reset OTP - Sari-Sari Store',
@@ -105,17 +107,23 @@ router.post('/forgot-password', async (req, res) => {
           `,
           text: `Your OTP for password reset is: ${otp}. It will expire in 15 minutes.`,
         });
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('SMTP connection timed out')), 6000)
+        );
+
+        await Promise.race([sendPromise, timeoutPromise]);
         console.log(`OTP successfully delivered to ${user.email}`);
       } catch (emailErr) {
-        console.error("Failed to deliver reset email via SMTP:", emailErr);
+        console.error("Failed to deliver reset email via SMTP:", emailErr.message);
         return res.status(500).json({ 
-          message: 'Failed to deliver OTP email. Please ensure SMTP configuration is correct on the server.' 
+          message: `Email sending timed out or failed (${emailErr.message}). Please check SMTP configuration on Render.` 
         });
       }
     } else {
       console.warn("SMTP_USER is not configured on server.");
       return res.status(500).json({
-        message: 'Email service is not configured on the backend server.'
+        message: 'Email service is not configured on the backend server. Please add SMTP_USER & SMTP_PASS in Render.'
       });
     }
 
