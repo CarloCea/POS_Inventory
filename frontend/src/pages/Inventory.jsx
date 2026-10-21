@@ -520,67 +520,34 @@ const Inventory = ({ inventory, fetchInventory }) => {
                   />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-medium text-gray-700">Profit (Markup)</label>
-                    <div className="inline-flex rounded-md border border-gray-200 bg-gray-100 p-0.5 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => handleProfitTypeChange('fixed')}
-                        className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                          profitType === 'fixed'
-                            ? 'bg-white text-blue-600 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        ₱ (Amount)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleProfitTypeChange('percent')}
-                        className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                          profitType === 'percent'
-                            ? 'bg-white text-blue-600 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        % (Percent)
-                      </button>
-                    </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Profit (Markup)</label>
+                  <div className="relative flex rounded-md shadow-sm">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm font-medium">
+                      {profitType === 'fixed' ? '₱' : '%'}
+                    </span>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={profitType === 'fixed' ? formData.profit : profitPercent}
+                      onChange={e => profitType === 'fixed' ? handleProfitFixedChange(e.target.value) : handleProfitPercentChange(e.target.value)}
+                      className="flex-1 min-w-0 block w-full px-3 py-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      placeholder={profitType === 'fixed' ? "0.00" : "20"}
+                    />
+                    <select
+                      value={profitType}
+                      onChange={e => handleProfitTypeChange(e.target.value)}
+                      className="inline-flex items-center px-2.5 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-700 text-xs font-semibold hover:bg-gray-100 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                    >
+                      <option value="fixed">₱ Peso</option>
+                      <option value="percent">% Percent</option>
+                    </select>
                   </div>
-
-                  {profitType === 'fixed' ? (
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 text-sm">₱</span>
-                      <input
-                        type="number"
-                        required
-                        step="0.01"
-                        min="0"
-                        value={formData.profit}
-                        onChange={e => handleProfitFixedChange(e.target.value)}
-                        className="w-full pl-7 pr-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          required
-                          step="0.01"
-                          min="0"
-                          value={profitPercent}
-                          onChange={e => handleProfitPercentChange(e.target.value)}
-                          className="w-full pr-8 pl-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="e.g. 20"
-                        />
-                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 text-sm">%</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Equivalent to: <span className="font-semibold text-gray-700">₱{(Number(formData.profit) || 0).toFixed(2)}</span>
-                      </p>
-                    </div>
+                  {profitType === 'percent' && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      = <span className="font-semibold text-gray-800">₱{(Number(formData.profit) || 0).toFixed(2)}</span> profit
+                    </p>
                   )}
                 </div>
               </div>
