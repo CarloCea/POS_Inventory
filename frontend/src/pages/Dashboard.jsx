@@ -440,7 +440,7 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
                     <option value="">-- Choose an Existing Product --</option>
                     {inventory.map(item => (
                       <option key={item._id} value={item._id}>
-                        {item.name} {item.netWeight ? `(${item.netWeight})` : ''} — Current Stock: {item.quantity} {item.unit || 'pcs'}
+                        {item.name}
                       </option>
                     ))}
                   </select>

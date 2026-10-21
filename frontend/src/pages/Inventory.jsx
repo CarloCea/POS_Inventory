@@ -11,7 +11,6 @@ const Inventory = ({ inventory, fetchInventory }) => {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('add');
-  const [activeItem, setActiveItem] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   
   // Adjustment Modal state
@@ -106,7 +105,6 @@ const Inventory = ({ inventory, fetchInventory }) => {
 
   const handleOpenModal = (type, item = null) => {
     setModalType(type);
-    setActiveItem(item);
     setProfitType('fixed');
     setProfitPercent('');
     if (item) {
@@ -170,7 +168,6 @@ const Inventory = ({ inventory, fetchInventory }) => {
   const handleRestockProductSelect = (selectedId) => {
     const prod = inventory.find(p => p._id === selectedId);
     if (!prod) return;
-    setActiveItem(prod);
     setProfitType('fixed');
     setProfitPercent('');
     // Business Rule 2: Autofill ONLY barcode and category from most recent record,
@@ -512,19 +509,6 @@ const Inventory = ({ inventory, fetchInventory }) => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-              {modalType === 'restock' && activeItem && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
-                  <div className="font-bold mb-1 flex items-center justify-between">
-                    <span>Current Stock: {activeItem.quantity} {activeItem.unit || 'pcs'}</span>
-                    {activeItem.expiryDate && (
-                      <span className="text-blue-700 font-semibold">Active Expiry: {new Date(activeItem.expiryDate).toLocaleDateString()}</span>
-                    )}
-                  </div>
-                  <p className="text-gray-600">
-                    If this new shipment has a different expiration date, enter it below. The system will track it as a new batch and sell older batches first (FIFO).
-                  </p>
-                </div>
-              )}
               <div className="flex flex-col items-center mb-2">
                 <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden mb-3 relative group">
                   {formData.image ? (
@@ -578,7 +562,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
                     <option value="">-- Choose an Existing Product --</option>
                     {inventory.map(item => (
                       <option key={item._id} value={item._id}>
-                        {item.name} {item.netWeight ? `(${item.netWeight})` : ''} — Current Stock: {item.quantity} {item.unit || 'pcs'}
+                        {item.name}
                       </option>
                     ))}
                   </select>
