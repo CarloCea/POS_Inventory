@@ -76,9 +76,9 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
   };
 
   const handlePriceChange = (val) => {
-    const cost = parseFloat(val) || 0;
+    const cost = val === '' ? '' : (parseFloat(val) || 0);
     let newProfit = formData.profit;
-    if (profitType === 'percent') {
+    if (profitType === 'percent' && profitPercent !== '' && cost !== '') {
       const pct = parseFloat(profitPercent) || 0;
       newProfit = parseFloat(((cost * pct) / 100).toFixed(2));
     }
@@ -86,11 +86,13 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
   };
 
   const handleProfitFixedChange = (val) => {
-    const profitVal = parseFloat(val) || 0;
+    const profitVal = val === '' ? '' : (parseFloat(val) || 0);
     setFormData(prev => ({ ...prev, profit: profitVal }));
     const cost = Number(formData.price) || 0;
-    if (cost > 0) {
+    if (cost > 0 && profitVal !== '') {
       setProfitPercent(parseFloat(((profitVal / cost) * 100).toFixed(2)).toString());
+    } else if (profitVal === '') {
+      setProfitPercent('');
     }
   };
 
@@ -109,16 +111,41 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
     setProfitType('fixed');
     setProfitPercent('');
     setFormData({
+      _id: '',
       name: '',
       category: '',
       netWeight: '',
       image: '',
-      quantity: 0,
-      price: 0,
-      profit: 0,
-      reorderPoint: 10
+      quantity: '',
+      price: '',
+      profit: '',
+      reorderPoint: 10,
+      expiryDate: '',
+      unit: 'pcs',
+      barcode: ''
     });
     setShowModal(true);
+  };
+
+  const handleRestockProductSelect = (selectedId) => {
+    const prod = inventory.find(p => p._id === selectedId);
+    if (!prod) return;
+    setProfitType('fixed');
+    setProfitPercent('');
+    setFormData({
+      _id: prod._id,
+      name: prod.name,
+      barcode: prod.barcode || '',
+      category: prod.category || '',
+      netWeight: prod.netWeight || '',
+      image: prod.image || '',
+      unit: prod.unit || 'pcs',
+      reorderPoint: prod.reorderPoint !== undefined ? prod.reorderPoint : 10,
+      quantity: '',
+      price: '',
+      profit: '',
+      expiryDate: ''
+    });
   };
 
   const handleCloseModal = () => {
@@ -138,11 +165,22 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.expiryDate || String(formData.expiryDate).trim() === '') {
+      toast.error('Expiration date is strictly required.');
+      return;
+    }
     try {
+      const payload = {
+        ...formData,
+        quantity: Number(formData.quantity) || 0,
+        price: Number(formData.price) || 0,
+        profit: Number(formData.profit) || 0,
+        reorderPoint: Number(formData.reorderPoint) || 10
+      };
       if (modalType === 'add') {
-        await addProduct(formData);
+        await addProduct(payload);
       } else if (modalType === 'restock') {
-        await restockProduct(formData);
+        await restockProduct(payload);
       }
       await fetchStats();
       if (fetchInventory) await fetchInventory();
@@ -390,64 +428,107 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
                   </label>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                  list="dashboard-inventory-names"
-                />
-                {modalType === 'restock' && (
+              {modalType === 'restock' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Product to Restock *</label>
+                  <select
+                    value={formData._id || ''}
+                    onChange={e => handleRestockProductSelect(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                    required
+                  >
+                    <option value="">-- Choose an Existing Product --</option>
+                    {inventory.map(item => (
+                      <option key={item._id} value={item._id}>
+                        {item.name} {item.netWeight ? `(${item.netWeight})` : ''} — Current Stock: {item.quantity} {item.unit || 'pcs'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                    list="dashboard-inventory-names"
+                  />
                   <datalist id="dashboard-inventory-names">
                     {[...new Set(inventory.map(i => i.name))].map(name => (
                       <option key={name} value={name} />
                     ))}
                   </datalist>
-                )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Barcode / ID</label>
+                  <input
+                    type="text"
+                    value={formData.barcode}
+                    onChange={e => setFormData({ ...formData, barcode: e.target.value })}
+                    placeholder="Scan or type"
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.category}
+                    onChange={e => setFormData({ ...formData, category: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    list="dashboard-inventory-categories"
+                  />
+                  <datalist id="dashboard-inventory-categories">
+                    {categories.filter(c => c !== 'All').map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value.toUpperCase() })}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  list="dashboard-inventory-categories"
-                />
-                <datalist id="dashboard-inventory-categories">
-                  {categories.filter(c => c !== 'All').map(cat => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Net Wt.</label>
-                <input
-                  type="text"
-                  value={formData.netWeight}
-                  onChange={e => setFormData({ ...formData, netWeight: e.target.value })}
-                  placeholder="e.g. 500g, 1kg"
-                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Net Wt.</label>
+                  <input
+                    type="text"
+                    value={formData.netWeight}
+                    onChange={e => setFormData({ ...formData, netWeight: e.target.value })}
+                    placeholder="e.g. 500g, 1kg"
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <select
+                    value={formData.unit || 'pcs'}
+                    onChange={e => setFormData({ ...formData, unit: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="pcs">Pieces (pcs)</option>
+                    <option value="packs">Packs (packs)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {modalType === 'restock' ? 'Quantity to Add' : 'Quantity'}
+                    {modalType === 'restock' ? 'Quantity to Add *' : 'Quantity *'}
                   </label>
                   <input
                     type="number"
                     required
                     min={modalType === 'restock' ? "1" : "0"}
                     value={formData.quantity}
-                    onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                    onChange={e => setFormData({ ...formData, quantity: e.target.value === '' ? '' : Number(e.target.value) })}
+                    placeholder="Enter quantity"
                     className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -462,6 +543,19 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
                     className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {modalType === 'restock' ? 'New Batch Expiry Date *' : 'Expiry Date *'}
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.expiryDate}
+                  onChange={e => setFormData({ ...formData, expiryDate: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">

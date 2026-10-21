@@ -2,8 +2,12 @@ const mongoose = require('mongoose');
 
 const batchSchema = new mongoose.Schema({
   quantity: { type: Number, required: true, default: 0 },
-  expiryDate: { type: String, default: '' },
-  receivedDate: { type: Date, default: Date.now }
+  expiryDate: { type: String, required: true },
+  price: { type: Number, default: 0 },
+  profit: { type: Number, default: 0 },
+  totalCost: { type: Number, default: 0 },
+  receivedDate: { type: Date, default: Date.now },
+  isExpiredLogged: { type: Boolean, default: false }
 }, { _id: true });
 
 const productSchema = new mongoose.Schema({

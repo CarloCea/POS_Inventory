@@ -28,6 +28,21 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     return matchesCategory && matchesSearch;
   });
 
+  // Business Rule 4: POS interface must show only one entry per unique product (differentiated only if different net weights)
+  const uniquePOSCatalog = [];
+  const seenProducts = new Map();
+  for (const item of filteredInventory) {
+    const key = `${(item.name || '').trim().toLowerCase()}___${(item.netWeight || '').trim().toLowerCase()}`;
+    if (!seenProducts.has(key)) {
+      seenProducts.set(key, { ...item });
+      uniquePOSCatalog.push(seenProducts.get(key));
+    } else {
+      const existing = seenProducts.get(key);
+      existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
+      existing.batches = [...(existing.batches || []), ...(item.batches || [])];
+    }
+  }
+
   const addToCart = (product) => {
     if (product.expiryDate) {
       const expiry = new Date(product.expiryDate);
@@ -214,7 +229,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
             </div>
 
             <div className="p-2 sm:p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 content-start">
-              {filteredInventory.map(item => {
+              {uniquePOSCatalog.map(item => {
                 let isExpired = false;
                 const now = new Date();
                 now.setHours(0, 0, 0, 0);

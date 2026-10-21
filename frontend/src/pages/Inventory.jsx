@@ -76,9 +76,9 @@ const Inventory = ({ inventory, fetchInventory }) => {
   };
 
   const handlePriceChange = (val) => {
-    const cost = parseFloat(val) || 0;
+    const cost = val === '' ? '' : (parseFloat(val) || 0);
     let newProfit = formData.profit;
-    if (profitType === 'percent') {
+    if (profitType === 'percent' && profitPercent !== '' && cost !== '') {
       const pct = parseFloat(profitPercent) || 0;
       newProfit = parseFloat(((cost * pct) / 100).toFixed(2));
     }
@@ -86,11 +86,13 @@ const Inventory = ({ inventory, fetchInventory }) => {
   };
 
   const handleProfitFixedChange = (val) => {
-    const profitVal = parseFloat(val) || 0;
+    const profitVal = val === '' ? '' : (parseFloat(val) || 0);
     setFormData(prev => ({ ...prev, profit: profitVal }));
     const cost = Number(formData.price) || 0;
-    if (cost > 0) {
+    if (cost > 0 && profitVal !== '') {
       setProfitPercent(parseFloat(((profitVal / cost) * 100).toFixed(2)).toString());
+    } else if (profitVal === '') {
+      setProfitPercent('');
     }
   };
 
@@ -108,25 +110,44 @@ const Inventory = ({ inventory, fetchInventory }) => {
     setProfitType('fixed');
     setProfitPercent('');
     if (item) {
-      const cost = Number(item.price) || 0;
-      const prof = Number(item.profit) || 0;
-      if (cost > 0) {
-        setProfitPercent(parseFloat(((prof / cost) * 100).toFixed(2)).toString());
+      if (type === 'restock') {
+        // Business Rule 2: Autofill ONLY barcode and category from most recent record,
+        // leaving cost_price, markup, expiration_date, and quantity open for manual entry.
+        setFormData({
+          _id: item._id,
+          name: item.name,
+          category: item.category || '',
+          barcode: item.barcode || '',
+          netWeight: item.netWeight || '',
+          image: item.image || '',
+          unit: item.unit || 'pcs',
+          reorderPoint: item.reorderPoint !== undefined ? item.reorderPoint : 10,
+          quantity: '',
+          price: '',
+          profit: '',
+          expiryDate: ''
+        });
+      } else {
+        const cost = Number(item.price) || 0;
+        const prof = Number(item.profit) || 0;
+        if (cost > 0) {
+          setProfitPercent(parseFloat(((prof / cost) * 100).toFixed(2)).toString());
+        }
+        setFormData({
+          _id: item._id,
+          name: item.name,
+          category: item.category,
+          netWeight: item.netWeight || '',
+          image: item.image || '',
+          quantity: item.quantity,
+          price: item.price,
+          profit: item.profit,
+          reorderPoint: item.reorderPoint,
+          expiryDate: item.expiryDate || '',
+          unit: item.unit || 'pcs',
+          barcode: item.barcode || ''
+        });
       }
-      setFormData({
-        _id: item._id,
-        name: item.name,
-        category: item.category,
-        netWeight: item.netWeight || '',
-        image: item.image || '',
-        quantity: type === 'restock' ? 0 : item.quantity,
-        price: item.price,
-        profit: item.profit,
-        reorderPoint: item.reorderPoint,
-        expiryDate: type === 'restock' ? '' : (item.expiryDate || ''),
-        unit: item.unit || 'pcs',
-        barcode: item.barcode || ''
-      });
     } else {
       setFormData({
         _id: '',
@@ -134,9 +155,9 @@ const Inventory = ({ inventory, fetchInventory }) => {
         category: '',
         netWeight: '',
         image: '',
-        quantity: 0,
-        price: 0,
-        profit: 0,
+        quantity: '',
+        price: '',
+        profit: '',
         reorderPoint: 10,
         expiryDate: '',
         unit: 'pcs',
@@ -146,19 +167,55 @@ const Inventory = ({ inventory, fetchInventory }) => {
     setShowModal(true);
   };
 
+  const handleRestockProductSelect = (selectedId) => {
+    const prod = inventory.find(p => p._id === selectedId);
+    if (!prod) return;
+    setActiveItem(prod);
+    setProfitType('fixed');
+    setProfitPercent('');
+    // Business Rule 2: Autofill ONLY barcode and category from most recent record,
+    // leaving cost_price, markup, expiration_date, and quantity open for manual entry.
+    setFormData({
+      _id: prod._id,
+      name: prod.name,
+      barcode: prod.barcode || '',
+      category: prod.category || '',
+      netWeight: prod.netWeight || '',
+      image: prod.image || '',
+      unit: prod.unit || 'pcs',
+      reorderPoint: prod.reorderPoint !== undefined ? prod.reorderPoint : 10,
+      quantity: '',
+      price: '',
+      profit: '',
+      expiryDate: ''
+    });
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Rule 1: Expiration date is strictly required
+    if (!formData.expiryDate || String(formData.expiryDate).trim() === '') {
+      toast.error('Expiration date is strictly required.');
+      return;
+    }
     try {
+      const payload = {
+        ...formData,
+        quantity: Number(formData.quantity) || 0,
+        price: Number(formData.price) || 0,
+        profit: Number(formData.profit) || 0,
+        reorderPoint: Number(formData.reorderPoint) || 10
+      };
       if (modalType === 'add') {
-        await addProduct(formData);
+        await addProduct(payload);
       } else if (modalType === 'restock') {
-        await restockProduct(formData);
+        await restockProduct(payload);
       } else if (modalType === 'edit') {
-        await updateInventory(formData._id, formData);
+        await updateInventory(formData._id, payload);
       }
       await fetchInventory();
       window.dispatchEvent(new Event('inventoryUpdated'));
@@ -287,107 +344,154 @@ const Inventory = ({ inventory, fetchInventory }) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredInventory.map(item => {
-              let isExpired = false;
-              if (item.expiryDate) {
-                const expiry = new Date(item.expiryDate);
-                const now = new Date();
-                now.setHours(0, 0, 0, 0);
-                if (expiry < now) isExpired = true;
+            {(() => {
+              const displayItems = [];
+              filteredInventory.forEach(item => {
+                const activeBatches = (item.batches || []).filter(b => (Number(b.quantity) || 0) > 0);
+                const hasDifferentCosts = activeBatches.length > 1 && activeBatches.some(b => 
+                  Number(b.price) !== Number(activeBatches[0].price) || 
+                  Number(b.profit) !== Number(activeBatches[0].profit)
+                );
+
+                if (hasDifferentCosts) {
+                  activeBatches.forEach((batch, idx) => {
+                    displayItems.push({
+                      ...item,
+                      displayKey: `${item._id}_batch_${batch._id || idx}`,
+                      batchIndex: idx + 1,
+                      isBatchSplit: true,
+                      quantity: batch.quantity,
+                      price: Number(batch.price) || 0,
+                      profit: Number(batch.profit) || 0,
+                      totalCost: Number(batch.totalCost) || ((Number(batch.price) || 0) + (Number(batch.profit) || 0)),
+                      expiryDate: batch.expiryDate || '',
+                      originalItem: item
+                    });
+                  });
+                } else {
+                  displayItems.push({
+                    ...item,
+                    displayKey: item._id,
+                    isBatchSplit: false,
+                    originalItem: item
+                  });
+                }
+              });
+
+              if (displayItems.length === 0) {
+                return (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                      No items found.
+                    </td>
+                  </tr>
+                );
               }
-              const isLowStock = item.quantity <= item.reorderPoint;
-              let rowClass = '';
-              if (isExpired && enableNotifications) rowClass = 'bg-red-50 hover:bg-red-100';
-              else if (isLowStock && enableNotifications) rowClass = 'bg-yellow-50 hover:bg-yellow-100';
-              else rowClass = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
-              
-              return (
-              <tr key={item._id} className={rowClass}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.barcode || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <span className="font-medium text-gray-900">
-                      {item.name} {item.netWeight ? `(${item.netWeight})` : ''}
-                    </span>
-                    {isExpired && enableNotifications ? (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
-                        Expired
-                      </span>
-                    ) : isLowStock && enableNotifications && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400 text-yellow-900">
-                        Low Stock
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={` ${isLowStock ? 'text-yellow-600' : 'text-gray-600'}`}>
-                    {item.quantity} {item.unit || 'pcs'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {item.expiryDate ? (
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {new Date(item.expiryDate).toLocaleDateString()}
+
+              return displayItems.map(item => {
+                let isExpired = false;
+                if (item.expiryDate) {
+                  const expiry = new Date(item.expiryDate);
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
+                  if (expiry < now) isExpired = true;
+                }
+                const isLowStock = item.quantity <= item.reorderPoint;
+                let rowClass = '';
+                if (isExpired && enableNotifications) rowClass = 'bg-red-50 hover:bg-red-100';
+                else if (isLowStock && enableNotifications) rowClass = 'bg-yellow-50 hover:bg-yellow-100';
+                else rowClass = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
+
+                return (
+                  <tr key={item.displayKey} className={rowClass}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.barcode || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-900">
+                          {item.name} {item.netWeight ? `(${item.netWeight})` : ''}
+                        </span>
+                        {item.isBatchSplit && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                            Batch #{item.batchIndex}
+                          </span>
+                        )}
+                        {isExpired && enableNotifications ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
+                            Expired
+                          </span>
+                        ) : isLowStock && enableNotifications && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-400 text-yellow-900">
+                            Low Stock
+                          </span>
+                        )}
                       </div>
-                      {(() => {
-                        const activeBatches = (item.batches || []).filter(b => b.quantity > 0);
-                        if (activeBatches.length > 1) {
-                          return (
-                            <div className="group relative inline-block cursor-pointer mt-0.5">
-                              <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full hover:bg-blue-100 transition-colors">
-                                {activeBatches.length} batches (FIFO)
-                              </span>
-                              <div className="hidden group-hover:block absolute bottom-full left-0 mb-1 z-30 bg-gray-900 text-white text-xs rounded-xl py-2 px-3 shadow-xl min-w-[200px] pointer-events-none">
-                                <div className="font-bold text-[11px] text-gray-300 border-b border-gray-700 pb-1 mb-1.5">
-                                  Batch Expiration Schedule:
-                                </div>
-                                <div className="space-y-1">
-                                  {activeBatches.map((b, idx) => (
-                                    <div key={idx} className="flex justify-between items-center text-[10px]">
-                                      <span className="text-gray-300">Batch {idx + 1}: {b.quantity} {item.unit || 'pcs'}</span>
-                                      <span className="font-semibold text-white ml-2">
-                                        {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : 'No exp'}
-                                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.category}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`${isLowStock ? 'text-yellow-600' : 'text-gray-600'}`}>
+                        {item.quantity} {item.unit || 'pcs'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {item.expiryDate ? (
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {new Date(item.expiryDate).toLocaleDateString()}
+                          </div>
+                          {!item.isBatchSplit && (() => {
+                            const activeBatches = (item.batches || []).filter(b => b.quantity > 0);
+                            if (activeBatches.length > 1) {
+                              return (
+                                <div className="group relative inline-block cursor-pointer mt-0.5">
+                                  <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full hover:bg-blue-100 transition-colors">
+                                    {activeBatches.length} batches (FEFO)
+                                  </span>
+                                  <div className="hidden group-hover:block absolute bottom-full left-0 mb-1 z-30 bg-gray-900 text-white text-xs rounded-xl py-2 px-3 shadow-xl min-w-[200px] pointer-events-none">
+                                    <div className="font-bold text-[11px] text-gray-300 border-b border-gray-700 pb-1 mb-1.5">
+                                      Batch Expiration Schedule:
                                     </div>
-                                  ))}
+                                    <div className="space-y-1">
+                                      {activeBatches.map((b, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-[10px]">
+                                          <span className="text-gray-300">Batch {idx + 1}: {b.quantity} {item.unit || 'pcs'}</span>
+                                          <span className="font-semibold text-white ml-2">
+                                            {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : 'No exp'}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                  ) : 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₱{item.price.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₱{item.profit.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900">₱{item.totalCost.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-3">
-                    <button onClick={() => handleOpenAdjModal(item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Adjust Stock">
-                      <MinusCircle className="w-5 h-5" />
-                    </button>
-                    <button onClick={() => handleOpenModal('edit', item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Edit">
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button onClick={() => handleDelete(item._id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Delete">
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            )})}
-            {filteredInventory.length === 0 && (
-              <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                  No items found.
-                </td>
-              </tr>
-            )}
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      ) : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₱{item.price.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₱{item.profit.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900">₱{item.totalCost.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-3">
+                        <button onClick={() => handleOpenModal('restock', item.originalItem || item)} className="text-gray-400 hover:text-orange-600 transition-colors" title="Restock">
+                          <Package className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleOpenAdjModal(item.originalItem || item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Adjust Stock">
+                          <MinusCircle className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleOpenModal('edit', item.originalItem || item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Edit">
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleDelete((item.originalItem || item)._id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Delete">
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              });
+            })()}
           </tbody>
         </table>
       </div>
@@ -462,25 +566,42 @@ const Inventory = ({ inventory, fetchInventory }) => {
                   </label>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})}
-                  disabled={modalType === 'edit'}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100"
-                  list="inventory-names"
-                />
-                {modalType === 'restock' && (
+              {modalType === 'restock' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Product to Restock *</label>
+                  <select
+                    value={formData._id || ''}
+                    onChange={e => handleRestockProductSelect(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors font-medium text-gray-900 bg-white"
+                    required
+                  >
+                    <option value="">-- Choose an Existing Product --</option>
+                    {inventory.map(item => (
+                      <option key={item._id} value={item._id}>
+                        {item.name} {item.netWeight ? `(${item.netWeight})` : ''} — Current Stock: {item.quantity} {item.unit || 'pcs'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})}
+                    disabled={modalType === 'edit'}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100"
+                    list="inventory-names"
+                  />
                   <datalist id="inventory-names">
                     {[...new Set(inventory.map(i => i.name))].map(name => (
                       <option key={name} value={name} />
                     ))}
                   </datalist>
-                )}
-              </div>
+                </div>
+              )}
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -548,14 +669,15 @@ const Inventory = ({ inventory, fetchInventory }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {modalType === 'restock' ? 'Quantity to Add' : 'Quantity'}
+                    {modalType === 'restock' ? 'Quantity to Add *' : 'Quantity *'}
                   </label>
                   <input
                     type="number"
                     required
                     min={modalType === 'restock' ? "1" : "0"}
                     value={formData.quantity}
-                    onChange={e => setFormData({...formData, quantity: Number(e.target.value)})}
+                    onChange={e => setFormData({...formData, quantity: e.target.value === '' ? '' : Number(e.target.value)})}
+                    placeholder="Enter quantity"
                     className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
@@ -574,10 +696,11 @@ const Inventory = ({ inventory, fetchInventory }) => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {modalType === 'restock' ? 'New Batch Expiry Date (Optional)' : 'Expiry Date (Optional)'}
+                  {modalType === 'restock' ? 'New Batch Expiry Date *' : 'Expiry Date *'}
                 </label>
                 <input
                   type="date"
+                  required
                   value={formData.expiryDate}
                   onChange={e => setFormData({...formData, expiryDate: e.target.value})}
                   className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -586,7 +709,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
 
               <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (Cost) ₱</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (Cost) ₱ *</label>
                   <input
                     type="number"
                     required
@@ -594,11 +717,12 @@ const Inventory = ({ inventory, fetchInventory }) => {
                     min="0"
                     value={formData.price}
                     onChange={e => handlePriceChange(e.target.value)}
+                    placeholder="Enter cost"
                     className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profit (Markup)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Profit (Markup) *</label>
                   <div className="relative flex rounded-md shadow-sm">
                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm font-medium">
                       {profitType === 'fixed' ? '₱' : '%'}

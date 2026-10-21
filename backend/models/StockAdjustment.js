@@ -9,6 +9,8 @@ const stockAdjustmentSchema = new mongoose.Schema({
     enum: ['Damage', 'Loss', 'Expired', 'Theft', 'Other'],
     required: true
   },
+  type: { type: String, default: 'MANUAL' },
+  batchId: { type: String, default: '' },
   notes: { type: String },
   cost: { type: Number, default: 0 },
   date: { type: Date, default: Date.now }

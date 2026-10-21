@@ -26,13 +26,20 @@ router.post('/checkout', async (req, res) => {
         return res.status(400).json({ message: `Not enough stock for ${item.name}` });
       }
       
-      // Deduct quantity using First-In, First-Out (FIFO) across batches
-      deductFifo(product, item.cartQuantity);
+      // Deduct quantity using FEFO (First-Expired, First-Out, fallback to FIFO) across batches
+      const { deductions } = deductFifo(product, item.cartQuantity);
       product.sold += item.cartQuantity;
       await product.save();
 
-      const itemTotalCost = product.totalCost * item.cartQuantity;
-      const itemTotalProfit = product.profit * item.cartQuantity;
+      let itemTotalCost = 0;
+      let itemTotalProfit = 0;
+      if (deductions && deductions.length > 0) {
+        itemTotalCost = deductions.reduce((sum, d) => sum + (d.totalCost * d.quantity), 0);
+        itemTotalProfit = deductions.reduce((sum, d) => sum + (d.profit * d.quantity), 0);
+      } else {
+        itemTotalCost = product.totalCost * item.cartQuantity;
+        itemTotalProfit = product.profit * item.cartQuantity;
+      }
 
       calculatedTotalSales += itemTotalCost;
       calculatedTotalProfit += itemTotalProfit;

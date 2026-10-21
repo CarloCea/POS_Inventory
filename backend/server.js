@@ -45,9 +45,16 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(frontendBuildPath)) {
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sari-sari';
 
+const { checkAndLogExpiredBatches } = require('./utils/batchUtils');
+
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
+    // Run automated expiration check on startup
+    checkAndLogExpiredBatches();
+    // Schedule periodic expiration check every hour
+    setInterval(checkAndLogExpiredBatches, 60 * 60 * 1000);
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -55,3 +62,4 @@ mongoose.connect(MONGO_URI)
   .catch((err) => {
     console.error('Error connecting to MongoDB:', err.message);
   });
+

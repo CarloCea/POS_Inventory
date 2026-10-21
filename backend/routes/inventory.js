@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
-const { syncProductBatches } = require('../utils/batchUtils');
+const { syncProductBatches, checkAndLogExpiredBatches } = require('../utils/batchUtils');
 
-// Get all products
+// Get all products (automatically runs expiry audit before returning products)
 router.get('/', async (req, res) => {
   try {
+    await checkAndLogExpiredBatches();
     const products = await Product.find().sort({ _id: -1 });
     res.json(products);
   } catch (err) {
@@ -17,27 +18,40 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
-    const totalCost = Number(price) + Number(profit);
     
-    const batches = Number(quantity) > 0 ? [{
-      quantity: Number(quantity),
-      expiryDate: expiryDate || '',
-      receivedDate: new Date()
+    // Rule 1: Expiration date is strictly mandatory
+    if (!expiryDate || String(expiryDate).trim() === '') {
+      return res.status(400).json({ message: 'Expiration date is strictly required.' });
+    }
+
+    const costNum = Number(price) || 0;
+    const profitNum = Number(profit) || 0;
+    const totalCost = costNum + profitNum;
+    const qtyNum = Number(quantity) || 0;
+    
+    const batches = qtyNum > 0 ? [{
+      quantity: qtyNum,
+      expiryDate: String(expiryDate).trim(),
+      price: costNum,
+      profit: profitNum,
+      totalCost: totalCost,
+      receivedDate: new Date(),
+      isExpiredLogged: false
     }] : [];
 
     const product = new Product({
       name,
       category,
-      netWeight,
-      image,
-      quantity: Number(quantity) || 0,
-      price: Number(price),
-      profit: Number(profit),
+      netWeight: netWeight || '',
+      image: image || '',
+      quantity: qtyNum,
+      price: costNum,
+      profit: profitNum,
       totalCost,
       reorderPoint: Number(reorderPoint) || 10,
-      expiryDate: expiryDate || '',
-      unit,
-      barcode,
+      expiryDate: String(expiryDate).trim(),
+      unit: unit || 'pcs',
+      barcode: barcode || '',
       batches
     });
     
@@ -49,12 +63,36 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Restock product
+// Restock product (records new batch with its own cost, markup, and expiry date)
 router.post('/restock', async (req, res) => {
   try {
-    const { name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
-    const totalCost = Number(price) + Number(profit);
-    const existingProduct = await Product.findOne({ name: name, price: Number(price) });
+    const { _id, productId, name, category, netWeight, image, quantity, price, profit, reorderPoint, expiryDate, unit, barcode } = req.body;
+    
+    // Rule 1: Expiration date is strictly mandatory when receiving/restocking items
+    if (!expiryDate || String(expiryDate).trim() === '') {
+      return res.status(400).json({ message: 'Expiration date is strictly required when receiving/restocking items.' });
+    }
+
+    const costNum = Number(price) || 0;
+    const profitNum = Number(profit) || 0;
+    const totalCost = costNum + profitNum;
+    const qtyNum = Number(quantity) || 0;
+
+    if (qtyNum <= 0) {
+      return res.status(400).json({ message: 'Restock quantity must be greater than zero.' });
+    }
+
+    // Match existing product by _id, or by name + netWeight
+    let existingProduct = null;
+    if (_id || productId) {
+      existingProduct = await Product.findById(_id || productId);
+    }
+    if (!existingProduct && name) {
+      existingProduct = await Product.findOne({ 
+        name: name.trim(), 
+        ...(netWeight ? { netWeight: netWeight.trim() } : {}) 
+      });
+    }
 
     if (existingProduct) {
       if (!existingProduct.batches || existingProduct.batches.length === 0) {
@@ -62,25 +100,32 @@ router.post('/restock', async (req, res) => {
           existingProduct.batches = [{
             quantity: existingProduct.quantity,
             expiryDate: existingProduct.expiryDate || '',
-            receivedDate: new Date()
+            price: Number(existingProduct.price) || 0,
+            profit: Number(existingProduct.profit) || 0,
+            totalCost: Number(existingProduct.totalCost) || (Number(existingProduct.price) || 0) + (Number(existingProduct.profit) || 0),
+            receivedDate: new Date(),
+            isExpiredLogged: false
           }];
         } else {
           existingProduct.batches = [];
         }
       }
 
-      // Add the new batch with its unique expiration date
+      // Rule 3: Record new batch/lot entry with its own cost, markup, and expiry date
       existingProduct.batches.push({
-        quantity: Number(quantity),
-        expiryDate: expiryDate || '',
-        receivedDate: new Date()
+        quantity: qtyNum,
+        expiryDate: String(expiryDate).trim(),
+        price: costNum,
+        profit: profitNum,
+        totalCost: totalCost,
+        receivedDate: new Date(),
+        isExpiredLogged: false
       });
 
-      existingProduct.profit = Number(profit); 
-      existingProduct.totalCost = totalCost;
+      if (category) existingProduct.category = category;
       if (reorderPoint !== undefined) existingProduct.reorderPoint = Number(reorderPoint);
       if (unit !== undefined) existingProduct.unit = unit;
-      if (barcode !== undefined) existingProduct.barcode = barcode;
+      if (barcode !== undefined && barcode !== '') existingProduct.barcode = barcode;
       if (netWeight !== undefined) existingProduct.netWeight = netWeight;
       if (image !== undefined && image !== '') existingProduct.image = image;
 
@@ -88,25 +133,30 @@ router.post('/restock', async (req, res) => {
       await existingProduct.save();
       return res.status(200).json(existingProduct);
     } else {
-      const batches = Number(quantity) > 0 ? [{
-        quantity: Number(quantity),
-        expiryDate: expiryDate || '',
-        receivedDate: new Date()
-      }] : [];
+      // Create new product if it did not exist before
+      const batches = [{
+        quantity: qtyNum,
+        expiryDate: String(expiryDate).trim(),
+        price: costNum,
+        profit: profitNum,
+        totalCost: totalCost,
+        receivedDate: new Date(),
+        isExpiredLogged: false
+      }];
 
       const product = new Product({
         name,
         category,
-        netWeight,
-        image,
-        quantity: Number(quantity) || 0,
-        price: Number(price),
-        profit: Number(profit),
+        netWeight: netWeight || '',
+        image: image || '',
+        quantity: qtyNum,
+        price: costNum,
+        profit: profitNum,
         totalCost,
         reorderPoint: Number(reorderPoint) || 10,
-        expiryDate: expiryDate || '',
-        unit,
-        barcode,
+        expiryDate: String(expiryDate).trim(),
+        unit: unit || 'pcs',
+        barcode: barcode || '',
         batches
       });
 
