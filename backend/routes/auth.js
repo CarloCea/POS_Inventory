@@ -86,29 +86,39 @@ router.post('/forgot-password', async (req, res) => {
 
     console.log(`\n\n--- OTP for ${cleanEmail}: ${otp} ---\n\n`);
 
-    // Asynchronously dispatch email without blocking the HTTP response (instant UI response)
+    // Deliver email via SMTP
     if (transporter && process.env.SMTP_USER) {
-      transporter.sendMail({
-        from: `"Sari-Sari Store" <${process.env.SMTP_USER}>`,
-        to: user.email,
-        subject: 'Password Reset OTP - Sari-Sari Store',
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #2563eb;">Password Reset Request</h2>
-            <p>You requested an OTP to reset your password. Use the code below:</p>
-            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 5px; text-align: center; color: #1f2937; margin: 20px 0;">
-              ${otp}
+      try {
+        await transporter.sendMail({
+          from: `"Sari-Sari Store" <${process.env.SMTP_USER}>`,
+          to: user.email,
+          subject: 'Password Reset OTP - Sari-Sari Store',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+              <h2 style="color: #2563eb;">Password Reset Request</h2>
+              <p>You requested an OTP to reset your password. Use the code below:</p>
+              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 5px; text-align: center; color: #1f2937; margin: 20px 0;">
+                ${otp}
+              </div>
+              <p style="font-size: 13px; color: #6b7280;">This code is valid for 15 minutes. If you did not request this, please ignore this email.</p>
             </div>
-            <p style="font-size: 13px; color: #6b7280;">This code is valid for 15 minutes. If you did not request this, please ignore this email.</p>
-          </div>
-        `,
-        text: `Your OTP for password reset is: ${otp}. It will expire in 15 minutes.`,
-      }).catch(emailErr => {
-        console.error("Failed to deliver reset email in background:", emailErr);
+          `,
+          text: `Your OTP for password reset is: ${otp}. It will expire in 15 minutes.`,
+        });
+        console.log(`OTP successfully delivered to ${user.email}`);
+      } catch (emailErr) {
+        console.error("Failed to deliver reset email via SMTP:", emailErr);
+        return res.status(500).json({ 
+          message: 'Failed to deliver OTP email. Please ensure SMTP configuration is correct on the server.' 
+        });
+      }
+    } else {
+      console.warn("SMTP_USER is not configured on server.");
+      return res.status(500).json({
+        message: 'Email service is not configured on the backend server.'
       });
     }
 
-    // Respond immediately to the frontend
     res.json({ message: 'OTP sent successfully to your email!', email: user.email });
   } catch (err) {
     res.status(500).json({ message: err.message });
