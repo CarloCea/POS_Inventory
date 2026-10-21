@@ -167,14 +167,14 @@ const POSApp = () => {
             {fpStep === 1 && (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Username or Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                   <input
-                    type="text"
+                    type="email"
                     required
                     value={fpEmail}
                     onChange={(e) => setFpEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    placeholder="Enter your username or email"
+                    placeholder="Enter your registered email"
                   />
                 </div>
                 <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
