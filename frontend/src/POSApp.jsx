@@ -53,6 +53,10 @@ const POSApp = () => {
   };
 
   useEffect(() => {
+    document.title = 'POS';
+  }, []);
+
+  useEffect(() => {
     if (isLoggedIn) {
       const syncData = () => {
         fetchInventory();

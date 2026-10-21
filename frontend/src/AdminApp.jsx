@@ -47,6 +47,10 @@ const AdminApp = () => {
   };
 
   useEffect(() => {
+    document.title = 'Inventory';
+  }, []);
+
+  useEffect(() => {
     if (isLoggedIn) {
       fetchInventory();
       const interval = setInterval(fetchInventory, 5000);

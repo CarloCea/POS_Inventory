@@ -9,6 +9,10 @@ const App = () => {
   
   const isPOSDomain = hostname.startsWith('pos.') || hostname === 'pos.localhost' || port === '3001' || window.location.pathname.startsWith('/pos');
 
+  React.useEffect(() => {
+    document.title = isPOSDomain ? 'POS' : 'Inventory';
+  }, [isPOSDomain]);
+
   return (
     <ToastProvider>
       {isPOSDomain ? <POSApp /> : <AdminApp />}
