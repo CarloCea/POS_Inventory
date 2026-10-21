@@ -441,11 +441,11 @@ const Inventory = ({ inventory, fetchInventory }) => {
                               return (
                                 <div className="group relative inline-block cursor-pointer mt-0.5">
                                   <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full hover:bg-blue-100 transition-colors">
-                                    {activeBatches.length} batches (FEFO)
+                                    {activeBatches.length} batches
                                   </span>
                                   <div className="hidden group-hover:block absolute bottom-full left-0 mb-1 z-30 bg-gray-900 text-white text-xs rounded-xl py-2 px-3 shadow-xl min-w-[200px] pointer-events-none">
-                                    <div className="font-bold text-[11px] text-gray-300 border-b border-gray-700 pb-1 mb-1.5">
-                                      Batch Expiration Schedule:
+                                    <div className="font-semibold text-[11px] text-gray-300 border-b border-gray-700 pb-1 mb-1.5">
+                                      Active Batches:
                                     </div>
                                     <div className="space-y-1">
                                       {activeBatches.map((b, idx) => (
