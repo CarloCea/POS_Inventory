@@ -218,42 +218,44 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                   onClick={() => !isDisabled && addToCart(item)}
                   role="button"
                   tabIndex={0}
-                  className={`p-1.5 sm:p-3 rounded-2xl border transition-all flex flex-col relative overflow-hidden ${
+                  className={`rounded-2xl border transition-all flex flex-col relative overflow-hidden ${
+                    item.image ? 'p-0' : 'p-1.5 sm:p-3'
+                  } ${
                     isDisabled 
                       ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60' 
                       : 'bg-white border-gray-100 hover:border-gray-400 hover:shadow-md cursor-pointer'
                   }`}
                 >
                   {isExpired && (
-                    <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg z-10">
+                    <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg z-20">
                       EXPIRED
                     </div>
                   )}
                   {item.image ? (
-                    <div className="relative w-full h-full flex flex-col justify-between flex-1 min-h-[150px] rounded-xl overflow-hidden">
+                    <div className="relative w-full h-full flex flex-col justify-between flex-1 min-h-[150px] p-2.5 sm:p-3 overflow-hidden">
                       {/* Product Image Layer */}
                       <img 
                         src={item.image} 
                         alt={item.name} 
-                        className="absolute inset-0 w-full h-full object-contain p-2 transition-transform duration-300" 
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" 
                       />
-                      {/* Translucent Backdrop Overlay to keep description crisp and readable */}
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-[0.5px]" />
+                      {/* Smooth vertical gradient overlay to guarantee high contrast and readability over any product picture */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/60 pointer-events-none" />
 
                       {/* Centered Content: Name, Unit, Category & Net Wt. Pills */}
-                      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-1 sm:p-2">
-                        <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-snug line-clamp-3 mb-1 break-words">
+                      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-1">
+                        <h3 className="font-bold text-white text-sm sm:text-base leading-snug line-clamp-3 mb-1 break-words drop-shadow-sm">
                           {item.name}
                         </h3>
-                        <span className="text-gray-500 text-[10px] sm:text-xs block font-normal mb-1.5">
+                        <span className="text-white/80 text-[10px] sm:text-xs block font-normal mb-1.5 drop-shadow-xs">
                           / {item.unit || 'pcs'}
                         </span>
                         <div className="flex flex-wrap justify-center gap-1.5">
-                          <span className="text-gray-600 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2.5 py-0.5 bg-white/90 shadow-2xs">
+                          <span className="text-white font-medium text-[9px] sm:text-[10px] border border-white/30 rounded-full px-2.5 py-0.5 bg-black/40 backdrop-blur-xs shadow-xs">
                             {item.category}
                           </span>
                           {item.netWeight && (
-                            <span className="text-gray-600 font-medium text-[9px] sm:text-[10px] border border-gray-200 rounded-full px-2.5 py-0.5 bg-white/90 shadow-2xs">
+                            <span className="text-white font-medium text-[9px] sm:text-[10px] border border-white/30 rounded-full px-2.5 py-0.5 bg-black/40 backdrop-blur-xs shadow-xs">
                               {item.netWeight}
                             </span>
                           )}
@@ -261,12 +263,12 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                       </div>
 
                       {/* Bottom Row: Price and Stock Left */}
-                      <div className="relative z-10 mt-auto pt-2.5 px-1 flex justify-between items-center w-full gap-1 border-t border-gray-100 shrink-0">
-                        <span className="font-bold text-gray-900 text-xs sm:text-sm">
+                      <div className="relative z-10 mt-auto pt-2.5 px-0.5 flex justify-between items-center w-full gap-1 border-t border-white/20 shrink-0">
+                        <span className="font-bold text-white text-xs sm:text-sm drop-shadow-sm">
                           ₱{(item.totalCost || (item.price + (item.profit||0))).toFixed(2)}
                         </span>
-                        <span className={`text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          item.quantity > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'
+                        <span className={`text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium backdrop-blur-xs ${
+                          item.quantity > 0 ? 'bg-white/20 text-white border border-white/20' : 'bg-red-500/80 text-white'
                         }`}>
                           {item.quantity > 0 ? `${item.quantity} left` : 'Out'}
                         </span>
