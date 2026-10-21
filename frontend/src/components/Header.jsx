@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingCart, LogOut, LayoutDashboard, Package, TrendingUp, Settings as SettingsIcon, Menu, X, ClipboardList } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
