@@ -66,6 +66,11 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     setCart(prev => prev.filter(item => item._id !== id));
   };
 
+  const clearCart = () => {
+    setCart([]);
+    setCash('');
+  };
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.totalCost * item.cartQuantity), 0);
   const cashAmount = parseFloat(cash) || 0;
   const changeAmount = cashAmount - cartTotal;
@@ -335,9 +340,21 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                   <span>Current Order</span>
                 </h2>
               </div>
-              <span className="bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded-full">
-                {cart.length} items
-              </span>
+              <div className="flex items-center space-x-2">
+                {cart.length > 0 && (
+                  <button
+                    onClick={clearCart}
+                    className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 font-medium px-2 py-1 rounded-lg transition-colors flex items-center space-x-1 border border-red-100"
+                    title="Remove all items from order"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove all</span>
+                  </button>
+                )}
+                <span className="bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {cart.length} items
+                </span>
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
