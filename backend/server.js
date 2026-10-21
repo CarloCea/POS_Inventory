@@ -26,16 +26,18 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/adjustments', adjustmentsRoutes);
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+// Serve frontend in production (only if frontend build directory exists locally)
+const frontendBuildPath = path.join(__dirname, '../frontend/build');
+const fs = require('fs');
 
+if (process.env.NODE_ENV === 'production' && fs.existsSync(frontendBuildPath)) {
+  app.use(express.static(frontendBuildPath));
   app.use((req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'build', 'index.html'));
+    res.sendFile(path.resolve(frontendBuildPath, 'index.html'));
   });
 } else {
   app.get('/', (req, res) => {
-    res.send('API is running...');
+    res.json({ status: 'API is running', environment: process.env.NODE_ENV || 'development' });
   });
 }
 
