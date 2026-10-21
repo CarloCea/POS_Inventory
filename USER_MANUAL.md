@@ -27,28 +27,32 @@ The system has two separate portals to keep things safe and organized:
 This is the main screen used to ring up customer purchases.
 
 ### Core Functions:
-1. **Browse Products**:
-   * All items are shown as visual cards.
-   * Items with pictures display the product name, unit (e.g., `/ pcs`), category, net weight, price, and how many items are left in stock.
-   * If an item is expired, it shows a red **EXPIRED** tag and cannot be added.
-2. **Search & Filter**:
+1. **Browse Products (Unique Catalog View)**:
+   * All items are shown as clean, unique visual cards with no duplicates for different cost batches. Items are differentiated only if they have different net weights (e.g., `SUMMIT 500ml` vs. `SUMMIT 1000ml`).
+   * Total stock across all batches is automatically combined on the card.
+   * If an item is completely expired, it shows a red **EXPIRED** tag and cannot be added.
+2. **FEFO & FIFO Automated Stock Deduction**:
+   * When an item is sold, the system automatically pulls stock from the batch that is nearest to expiring first (**First-Expired, First-Out / FEFO**).
+   * If expiration dates are identical, it falls back to **First-In, First-Out (FIFO)**.
+   * Once a batch is completely exhausted, the system seamlessly rolls over and sells from the next batch with its respective cost and profit recorded.
+3. **Search & Filter**:
    * Type in the search box to find an item by its name or barcode number.
    * Click category buttons (e.g., *Beverages*, *Snacks*) to quickly filter items.
-3. **Barcode Scanner**:
+4. **Barcode Scanner**:
    * Click the **Barcode** icon to open your camera.
    * Scan any item's barcode to automatically add it to the order.
-4. **Current Order (Cart)**:
+5. **Current Order (Cart)**:
    * **Adjust Quantity**: Click **+** or **-** to change the item count.
    * **Delete Single Item**: Click the red trash icon next to an item to remove it.
    * **Remove All**: Click the red **Remove all** button at the top of the order list to clear the entire cart in one tap.
-5. **Checkout & Change Calculation**:
+6. **Checkout & Change Calculation**:
    * Type the cash amount received from the customer into the **Cash** box.
    * The system automatically shows the exact **Change** in green.
    * Click **Complete Purchase** to finish the sale.
-6. **Receipt Printing**:
+7. **Receipt Printing**:
    * After checkout, a receipt pop-up appears with the date, cashier name, item list, total price, cash given, and change.
    * Click **Print** to send the receipt to your receipt printer or save it as a PDF.
-7. **Transaction History**:
+8. **Transaction History**:
    * Switch to the **History** tab to see past sales made by the cashier during the day.
 
 ---
@@ -72,25 +76,32 @@ Provides an instant snapshot of how your store is performing.
 
 ## 4. Inventory Management Module (Admin)
 
-Where you view and control all products in your store.
+Where you view and control all products and inventory batches in your store.
 
 ### Core Functions:
-1. **Inventory Table**:
-   * Shows every product with its Name and Net Weight (e.g., `SUMMIT (1000ml)`), Category, Current Stock, Unit Cost, Markup, Selling Price, and Expiry Date.
-2. **Adding a New Item (+ Add Item)**:
+1. **Inventory Table & Batch Splitting**:
+   * Shows every product with its Barcode, Item Name, Category, Stock, Expiry Date, Unit Cost, Profit Markup, and Selling Price.
+   * **Batch Separation by Cost**: If a restocked batch has a different cost price or profit markup compared to earlier inventory, it is displayed as a separate batch/lot entry in the table (`Batch #1`, `Batch #2`) rather than overwriting existing cost records.
+   * Hover over the batch badge to see the complete expiration schedule of all active shipments.
+2. **Mandatory Expiration Date & Automated Daily Expiry Audit**:
+   * **Strict Expiry Required**: An expiration date is required whenever adding or restocking products.
+   * **Automated Expiry Log**: A background job runs automatically every day. When a batch reaches or passes its expiration date, the system immediately marks it as non-sellable (0 stock) and automatically creates an entry in `stock_logs` with type `EXPIRED`, batch ID, lost quantity, and financial cost.
+3. **Restocking Form Autofill**:
+   * When restocking via **+ Restock** (or clicking the restock icon on any row), pick the product from the dropdown.
+   * The system automatically pre-fills the **Barcode** and **Category** from the product's most recent record.
+   * Fields such as **Cost Price**, **Profit Markup**, **Expiration Date**, and **Quantity** are left open for fresh manual entry.
+4. **Adding a New Item (+ Add Item)**:
    * **Photo**: Upload a picture from your computer or snap one using your phone camera. If you want to remove the picture, hover your mouse over the picture box and click the red trash can icon.
    * **Item Name & Net Weight**: Type the product name and package size (e.g., `500ml`, `25g`).
    * **Unit**: Choose between pieces (`pcs`) or packs (`packs`).
    * **Pricing**: Type your purchase cost and your profit markup (choose either fixed Peso `₱` or percentage `%`). The selling price is calculated automatically.
    * **Stock & Alerts**: Set starting quantity and the low-stock warning threshold.
-   * **Barcode & Expiry Date**: Optional fields for barcode scanning and expiration tracking.
-3. **Editing an Item**:
+   * **Mandatory Expiry**: Select the expiration date for the initial batch.
+5. **Editing an Item**:
    * Click the pencil icon on any item row to edit prices, change photos, or update expiration dates.
-4. **Restocking (+ Restock)**:
-   * Select an item and add new quantity when new inventory arrives.
-5. **Adjusting Stock (Damaged / Expired / Lost)**:
-   * Click the minus icon on any item row to record lost or damaged goods. This subtracts items from inventory and tracks them as store losses.
-6. **Deleting an Item**:
+6. **Adjusting Stock (Damaged / Expired / Lost)**:
+   * Click the minus icon on any item row to manually record lost or damaged goods. This subtracts items from inventory and tracks them as store losses in Adjustments History.
+7. **Deleting an Item**:
    * Click the red trash icon on any row to completely remove a product from the system.
 
 ---
