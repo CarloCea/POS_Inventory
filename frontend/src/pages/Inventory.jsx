@@ -1005,7 +1005,8 @@ const Inventory = ({ inventory, fetchInventory }) => {
       {isScanning && (
         <BarcodeScanner 
           onScan={(text) => {
-            setFormData({...formData, barcode: text});
+            const cleanText = String(text || '').trim();
+            setFormData(prev => ({ ...prev, barcode: cleanText }));
             setIsScanning(false);
           }} 
           onClose={() => setIsScanning(false)} 

@@ -43,6 +43,71 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     }
   }
 
+  const handleBarcodeScanned = (scannedBarcode) => {
+    const clean = String(scannedBarcode || '').trim().toLowerCase();
+    if (!clean) return;
+
+    // Search in uniquePOSCatalog first (to get consolidated quantity and batches)
+    let product = uniquePOSCatalog.find(
+      item => item.barcode && String(item.barcode).trim().toLowerCase() === clean
+    );
+
+    // Fallback to full inventory items
+    if (!product) {
+      product = inventory.find(
+        item => item.barcode && String(item.barcode).trim().toLowerCase() === clean
+      );
+    }
+
+    if (product) {
+      addToCart(product);
+      toast.success(`Scanned: ${product.name}`);
+    } else {
+      toast.warning(`No product found with barcode: ${scannedBarcode}`);
+    }
+  };
+
+  // Hardware / USB / Bluetooth Barcode Scanner Listener
+  React.useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = (e) => {
+      if (isScanning) return; // Scanner modal has its own input
+
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTime;
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        // Hardware barcode scanners type very rapidly (characters arrive < 60ms apart)
+        if (buffer.length >= 3) {
+          e.preventDefault();
+          const scannedCode = buffer.trim();
+          buffer = '';
+          handleBarcodeScanned(scannedCode);
+        } else {
+          buffer = '';
+        }
+        return;
+      }
+
+      // Record alphanumeric printable characters
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (timeDiff > 70) {
+          // Manual typing resets buffer
+          buffer = e.key;
+        } else {
+          // Rapid typing from scanner
+          buffer += e.key;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isScanning, uniquePOSCatalog, inventory]);
+
   const addToCart = (product) => {
     if (product.expiryDate) {
       const expiry = new Date(product.expiryDate);
@@ -268,6 +333,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
                       <img 
                         src={item.image} 
                         alt={item.name} 
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" 
                       />
                       {/* Smooth vertical gradient overlay to guarantee high contrast and readability over any product picture */}
@@ -546,13 +612,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       {isScanning && (
         <BarcodeScanner 
           onScan={(text) => {
-            const product = inventory.find(item => item.barcode === text);
-            if (product) {
-              addToCart(product);
-              toast.success(`Scanned: ${product.name}`);
-            } else {
-              toast.warning(`No product found with barcode: ${text}`);
-            }
+            handleBarcodeScanned(text);
             setIsScanning(false);
           }} 
           onClose={() => setIsScanning(false)} 

@@ -1,6 +1,17 @@
 import axios from 'axios';
 const API_BASE = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000');
 const API_URL = `${API_BASE}/api`;
+
+// Handle response errors gracefully
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('API 401 Unauthorized:', error.config?.url);
+    }
+    return Promise.reject(error);
+  }
+);
 export const getInventory = async () => {
   const response = await axios.get(`${API_URL}/inventory`);
   return response.data;
