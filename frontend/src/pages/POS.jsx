@@ -67,6 +67,9 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     }
   };
 
+  const handleBarcodeScannedRef = React.useRef(handleBarcodeScanned);
+  handleBarcodeScannedRef.current = handleBarcodeScanned;
+
   // Hardware / USB / Bluetooth Barcode Scanner Listener
   React.useEffect(() => {
     let buffer = '';
@@ -85,7 +88,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
           e.preventDefault();
           const scannedCode = buffer.trim();
           buffer = '';
-          handleBarcodeScanned(scannedCode);
+          handleBarcodeScannedRef.current(scannedCode);
         } else {
           buffer = '';
         }
@@ -106,7 +109,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isScanning, uniquePOSCatalog, inventory]);
+  }, [isScanning]);
 
   const addToCart = (product) => {
     if (product.expiryDate) {
