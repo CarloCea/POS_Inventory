@@ -158,7 +158,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     if (cart.length === 0) return;
     const confirmed = await modal.confirm({
       title: 'Clear Order',
-      message: 'Are you sure you want to remove all items from this order? YES NO',
+      message: 'Are you sure you want to remove all items from this order?',
       confirmText: 'YES',
       cancelText: 'NO',
       type: 'danger'

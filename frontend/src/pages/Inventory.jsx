@@ -367,7 +367,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
   const handleDelete = async (id, itemName) => {
     const confirmed = await modal.confirm({
       title: 'Delete Item',
-      message: `Are you sure you want to delete ${itemName ? `"${itemName}"` : 'this item'}? YES NO`,
+      message: `Are you sure you want to delete ${itemName ? `"${itemName}"` : 'this item'}?`,
       confirmText: 'YES',
       cancelText: 'NO',
       type: 'danger'

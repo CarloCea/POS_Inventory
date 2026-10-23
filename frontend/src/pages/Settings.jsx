@@ -72,7 +72,7 @@ const Settings = () => {
     }
     const confirmed = await modal.confirm({
       title: 'Delete Account',
-      message: `Are you sure you want to delete ${username ? `account "${username}"` : 'this account'}? YES NO`,
+      message: `Are you sure you want to delete ${username ? `account "${username}"` : 'this account'}? `,
       confirmText: 'YES',
       cancelText: 'NO',
       type: 'danger'
