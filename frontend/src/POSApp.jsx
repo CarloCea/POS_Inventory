@@ -64,7 +64,7 @@ const POSApp = () => {
       };
 
       syncData();
-      const interval = setInterval(syncData, 15000);
+      const interval = setInterval(syncData, 30000);
       window.addEventListener('focus', syncData);
       window.addEventListener('inventoryUpdated', syncData);
       return () => {

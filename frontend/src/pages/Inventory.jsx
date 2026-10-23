@@ -4,6 +4,7 @@ import { addProduct, restockProduct, updateInventory, deleteProduct, addAdjustme
 import BarcodeScanner from '../components/BarcodeScanner';
 import { toast } from '../context/ToastContext';
 import { modal } from '../context/ModalContext';
+import { compressImage } from '../utils/imageCompressor';
 
 const Inventory = ({ inventory, fetchInventory }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -385,14 +386,15 @@ const Inventory = ({ inventory, fetchInventory }) => {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 600, 600, 0.75);
+        setFormData(prev => ({ ...prev, image: compressed }));
+      } catch (err) {
+        console.error('Error compressing image:', err);
+      }
     }
   };
 

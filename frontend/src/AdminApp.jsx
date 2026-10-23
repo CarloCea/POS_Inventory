@@ -53,7 +53,7 @@ const AdminApp = () => {
   useEffect(() => {
     if (isLoggedIn) {
       fetchInventory();
-      const interval = setInterval(fetchInventory, 15000);
+      const interval = setInterval(fetchInventory, 30000);
       const onSync = () => fetchInventory();
       window.addEventListener('focus', onSync);
       window.addEventListener('inventoryUpdated', onSync);

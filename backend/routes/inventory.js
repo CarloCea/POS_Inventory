@@ -53,11 +53,17 @@ router.get('/:id/image', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).select('image').lean();
     if (!product || !product.image) return res.status(404).end();
-    const match = /^data:([^;]+);base64,(.*)$/s.exec(product.image);
-    if (!match) return res.redirect(product.image);
-    res.set('Content-Type', match[1]);
+    if (!product.image.startsWith('data:')) {
+      return res.redirect(product.image);
+    }
+    const commaIdx = product.image.indexOf(',');
+    if (commaIdx === -1) return res.status(404).end();
+    const metaPart = product.image.slice(5, commaIdx);
+    const mime = metaPart.split(';')[0] || 'image/jpeg';
+    const base64Data = product.image.slice(commaIdx + 1);
+    res.set('Content-Type', mime);
     res.set('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send(Buffer.from(match[2], 'base64'));
+    res.send(Buffer.from(base64Data, 'base64'));
   } catch (err) {
     res.status(404).end();
   }

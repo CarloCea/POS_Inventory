@@ -4,6 +4,7 @@ import { TrendingUp, AlertTriangle, DollarSign, Plus, Package, X, ShoppingCart, 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, } from 'recharts';
 import { toast } from '../context/ToastContext';
 import { modal } from '../context/ModalContext';
+import { compressImage } from '../utils/imageCompressor';
 
 
 const Dashboard = ({ inventory = [], fetchInventory }) => {
@@ -34,7 +35,7 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 5000);
+    const interval = setInterval(fetchStats, 30000);
     const onSync = () => fetchStats();
     window.addEventListener('focus', onSync);
     window.addEventListener('inventoryUpdated', onSync);
@@ -188,14 +189,15 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
     setShowModal(false);
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 600, 600, 0.75);
+        setFormData(prev => ({ ...prev, image: compressed }));
+      } catch (err) {
+        console.error('Error compressing image:', err);
+      }
     }
   };
 
