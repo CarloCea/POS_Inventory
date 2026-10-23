@@ -3,11 +3,11 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { syncProductBatches, checkAndLogExpiredBatches } = require('../utils/batchUtils');
 
-// Get all products (automatically runs expiry audit before returning products)
+// Get all products (runs non-blocking expiry audit so queries return instantly)
 router.get('/', async (req, res) => {
   try {
-    await checkAndLogExpiredBatches();
-    const products = await Product.find().sort({ _id: -1 });
+    checkAndLogExpiredBatches().catch(err => console.error('Background expiry audit error:', err));
+    const products = await Product.find().sort({ _id: -1 }).lean();
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
