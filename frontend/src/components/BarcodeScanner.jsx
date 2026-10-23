@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { X, Camera, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -36,6 +36,33 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
 
   const lastScanRef = useRef({ code: '', time: 0 });
   const isMountedRef = useRef(true);
+  const startingRef = useRef(false);
+
+  const handleScannedCode = useCallback((rawCode) => {
+    const clean = String(rawCode || '').trim();
+    if (!clean) return;
+
+    const now = Date.now();
+    // 1.2s cooldown if scanning the exact same product repeatedly; immediate if different product
+    if (clean === lastScanRef.current.code && now - lastScanRef.current.time < 1200) {
+      return;
+    }
+
+    lastScanRef.current = { code: clean, time: now };
+    playBeep();
+
+    if (isMountedRef.current) {
+      setLastScanned(clean);
+      setScanFlash(true);
+      setTimeout(() => {
+        if (isMountedRef.current) setScanFlash(false);
+      }, 500);
+    }
+
+    if (onScanRef.current) {
+      onScanRef.current(clean);
+    }
+  }, []);
 
   const stopScanner = async () => {
     if (scannerRef.current) {
@@ -43,25 +70,45 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
         if (scannerRef.current.isScanning) {
           await scannerRef.current.stop();
         }
-        scannerRef.current.clear();
+        try {
+          scannerRef.current.clear();
+        } catch (e) {
+          // ignore clear errors
+        }
       } catch (err) {
-        console.warn('Error clearing scanner:', err);
+        console.warn('Error stopping scanner:', err);
       } finally {
         scannerRef.current = null;
       }
     }
+    const container = document.getElementById('barcode-camera-view');
+    if (container) {
+      container.innerHTML = '';
+    }
   };
 
   const startCamera = async (cameraIdToUse) => {
+    if (startingRef.current) return;
+    startingRef.current = true;
+
     setCameraLoading(true);
     setError(null);
 
     await stopScanner();
-    if (!isMountedRef.current) return;
+    if (!isMountedRef.current) {
+      startingRef.current = false;
+      return;
+    }
 
-    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // Check for getUserMedia support
+    const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const isLocal = window.location.hostname === 'localhost' ||
+                    window.location.hostname === '127.0.0.1' ||
+                    window.location.hostname.endsWith('.localhost');
+    if (!window.isSecureContext && !isLocal && !hasMedia) {
       setError('Camera access requires HTTPS or localhost in your browser.');
       setCameraLoading(false);
+      startingRef.current = false;
       return;
     }
 
@@ -86,11 +133,11 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
       let availableCameras = [];
       try {
         availableCameras = await Html5Qrcode.getCameras();
-        if (isMountedRef.current) {
+        if (isMountedRef.current && availableCameras.length > 0) {
           setCameras(availableCameras);
         }
       } catch (e) {
-        console.warn('Could not enumerate cameras:', e);
+        console.warn('Could not enumerate cameras prior to permission:', e);
       }
 
       const scanConfig = {
@@ -99,7 +146,8 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
         aspectRatio: 1.333333,
       };
 
-      let cameraTarget = { facingMode: 'environment' };
+      // Determine initial target
+      let cameraTarget = null;
       if (cameraIdToUse) {
         cameraTarget = cameraIdToUse;
       } else if (availableCameras.length > 0) {
@@ -109,51 +157,71 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
           c.label.toLowerCase().includes('environment')
         );
         cameraTarget = backCam ? backCam.id : availableCameras[0].id;
-        if (isMountedRef.current) {
-          setCurrentCameraId(typeof cameraTarget === 'string' ? cameraTarget : availableCameras[0].id);
+      } else {
+        cameraTarget = { facingMode: 'environment' };
+      }
+
+      const onDecoded = (decodedText) => {
+        handleScannedCode(decodedText);
+      };
+
+      // Try camera with fallback for PCs / laptops with only user/front camera
+      let started = false;
+      try {
+        await html5QrCode.start(cameraTarget, scanConfig, onDecoded, () => {});
+        started = true;
+      } catch (err1) {
+        console.warn('Primary camera target failed, trying fallback...', cameraTarget, err1);
+        
+        // If environment mode failed (typical on laptop/desktop webcams), try user facing
+        if (!cameraIdToUse) {
+          try {
+            await html5QrCode.start({ facingMode: 'user' }, scanConfig, onDecoded, () => {});
+            started = true;
+          } catch (err2) {
+            console.warn('Fallback to user camera failed:', err2);
+          }
+        }
+
+        // If still not started and cameras were found, try the first camera id
+        if (!started && availableCameras.length > 0) {
+          try {
+            await html5QrCode.start(availableCameras[0].id, scanConfig, onDecoded, () => {});
+            started = true;
+          } catch (err3) {
+            console.warn('Fallback to first camera id failed:', err3);
+          }
+        }
+
+        if (!started) {
+          throw err1;
         }
       }
 
-      await html5QrCode.start(
-        cameraTarget,
-        scanConfig,
-        (decodedText) => {
-          const clean = String(decodedText || '').trim();
-          if (!clean) return;
-
-          const now = Date.now();
-          // 1.4s cooldown if scanning the exact same product repeatedly; immediate if different product
-          if (clean === lastScanRef.current.code && now - lastScanRef.current.time < 1400) {
-            return;
+      // Now that camera permission is active, refresh the camera list for the dropdown
+      try {
+        const refreshedCameras = await Html5Qrcode.getCameras();
+        if (isMountedRef.current && refreshedCameras.length > 0) {
+          setCameras(refreshedCameras);
+          if (typeof cameraTarget === 'string') {
+            setCurrentCameraId(cameraTarget);
+          } else {
+            setCurrentCameraId(refreshedCameras[0].id);
           }
-
-          lastScanRef.current = { code: clean, time: now };
-          playBeep();
-
-          if (isMountedRef.current) {
-            setLastScanned(clean);
-            setScanFlash(true);
-            setTimeout(() => {
-              if (isMountedRef.current) setScanFlash(false);
-            }, 500);
-          }
-
-          // Notify parent (POS adds item to cart continuously without closing)
-          if (onScanRef.current) {
-            onScanRef.current(clean);
-          }
-        },
-        () => {
-          // scanning frame...
         }
-      );
+      } catch (e) {
+        // ignore enumeration errors
+      }
 
       if (isMountedRef.current) {
         setCameraLoading(false);
       }
     } catch (err) {
       console.error('Camera start failed:', err);
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current) {
+        startingRef.current = false;
+        return;
+      }
       setCameraLoading(false);
       const errMsg = err?.name || String(err || '');
       if (errMsg.includes('NotAllowedError') || errMsg.includes('PermissionDeniedError') || errMsg.includes('Permission')) {
@@ -161,8 +229,10 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
       } else if (errMsg.includes('NotFoundError') || errMsg.includes('DevicesNotFoundError')) {
         setError('No camera detected on this device.');
       } else {
-        setError('Could not access camera. Please ensure no other application is using it.');
+        setError('Could not access camera. Please check camera permissions or ensure no other app is using it.');
       }
+    } finally {
+      startingRef.current = false;
     }
   };
 
@@ -176,6 +246,43 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Hardware / USB / Bluetooth scanner listener while modal is open
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTime;
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        if (buffer.length >= 3) {
+          e.preventDefault();
+          const clean = buffer.trim();
+          buffer = '';
+          handleScannedCode(clean);
+        } else {
+          buffer = '';
+        }
+        return;
+      }
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (timeDiff > 70) {
+          buffer = e.key;
+        } else {
+          buffer += e.key;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleScannedCode]);
 
   const handleCameraChange = (e) => {
     const newId = e.target.value;
@@ -206,7 +313,7 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
           </div>
           <button 
             onClick={handleClose} 
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-xl transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
             title="Close scanner"
           >
             <X className="w-5 h-5" />
@@ -253,7 +360,7 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
                 <button
                   type="button"
                   onClick={() => startCamera(currentCameraId)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
                 >
                   Retry Camera
                 </button>
@@ -261,7 +368,7 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
             )}
           </div>
 
-          {/* Camera Selection (if device has multiple cameras, e.g. front and rear) */}
+          {/* Camera Selection (if device has multiple cameras) */}
           {cameras.length > 1 && !error && (
             <div className="w-full mt-2.5 flex items-center space-x-2">
               <span className="text-[11px] font-medium text-gray-500 shrink-0">Camera:</span>
@@ -279,7 +386,7 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
               <button
                 type="button"
                 onClick={() => startCamera(currentCameraId)}
-                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                 title="Refresh camera"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -313,7 +420,7 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
           <button
             type="button"
             onClick={handleClose}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-colors"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-colors cursor-pointer"
           >
             Done Scanning
           </button>

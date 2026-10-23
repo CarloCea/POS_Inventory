@@ -3,13 +3,63 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { syncProductBatches, checkAndLogExpiredBatches } = require('../utils/batchUtils');
 
-// Get all products (fast lean read query)
+// Image URLs we generate for list responses must never be saved back as the product image
+const isSelfImageUrl = (value) => typeof value === 'string' && /\/api\/inventory\/[a-f0-9]{24}\/image/i.test(value);
+
+// Never let a generated image URL be written back over the real stored image (POST/PUT/restock)
+router.use((req, res, next) => {
+  if (req.body && isSelfImageUrl(req.body.image)) {
+    delete req.body.image;
+  }
+  next();
+});
+
+// Get all products. Base64 images are excluded from the list (they can be several MB each)
+// and are served separately and cached through GET /:id/image.
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find().sort({ _id: -1 }).lean();
-    res.json(products);
+    const base = `${req.protocol}://${req.get('host')}`;
+    const [products, imageMeta] = await Promise.all([
+      Product.find().select('-image').sort({ _id: -1 }).lean(),
+      // Only the length and a non-data URL are pulled here, never the base64 payload
+      Product.aggregate([
+        {
+          $project: {
+            len: { $strLenCP: { $ifNull: ['$image', ''] } },
+            isData: { $eq: [{ $substrCP: [{ $ifNull: ['$image', ''] }, 0, 5] }, 'data:'] },
+            url: { $cond: [{ $eq: [{ $substrCP: [{ $ifNull: ['$image', ''] }, 0, 5] }, 'data:'] }, '', { $ifNull: ['$image', ''] }] }
+          }
+        }
+      ])
+    ]);
+
+    const metaById = new Map(imageMeta.map(m => [String(m._id), m]));
+    const result = products.map(p => {
+      const meta = metaById.get(String(p._id));
+      let image = '';
+      if (meta && meta.len > 0) {
+        image = meta.isData ? `${base}/api/inventory/${p._id}/image?v=${meta.len}` : meta.url;
+      }
+      return { ...p, image };
+    });
+    res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Serve a product image as a real, browser-cacheable image
+router.get('/:id/image', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).select('image').lean();
+    if (!product || !product.image) return res.status(404).end();
+    const match = /^data:([^;]+);base64,(.*)$/s.exec(product.image);
+    if (!match) return res.redirect(product.image);
+    res.set('Content-Type', match[1]);
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(Buffer.from(match[2], 'base64'));
+  } catch (err) {
+    res.status(404).end();
   }
 });
 

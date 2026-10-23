@@ -38,7 +38,7 @@ const AdminApp = () => {
   const fetchInventory = async () => {
     try {
       const data = await getInventory();
-      setInventory(data);
+      if (Array.isArray(data)) setInventory(data);
     } catch (error) {
       console.error("Error fetching inventory:", error);
     } finally {

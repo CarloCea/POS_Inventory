@@ -113,6 +113,10 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
   }, [isScanning]);
 
   const addToCart = (product) => {
+    if (!product || (Number(product.quantity) || 0) <= 0) {
+      toast.warning(`Out of stock: ${product?.name || 'Item'}`);
+      return;
+    }
     if (product.expiryDate) {
       const expiry = new Date(product.expiryDate);
       const now = new Date();

@@ -41,6 +41,16 @@ router.post('/login', async (req, res) => {
       }
     }
 
+    // Default cashier fallback if not yet in database
+    if ((identifier.toLowerCase() === 'cashier' || identifier.toLowerCase() === 'cashier@sarisari.com') && (password === 'cashier123' || password === 'admin123')) {
+      const cashierExists = await User.findOne({ 
+        $or: [{ username: { $regex: /^cashier$/i } }, { email: 'cashier@sarisari.com' }] 
+      });
+      if (!cashierExists) {
+        return res.json({ success: true, username: 'cashier', role: 'Cashier' });
+      }
+    }
+
     // Lookup user by either username or email (case-insensitive for email/username)
     const user = await User.findOne({
       $or: [

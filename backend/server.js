@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // CORS configuration to allow Vercel, localhost, and all origins
 app.use(cors({
