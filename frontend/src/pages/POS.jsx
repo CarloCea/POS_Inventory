@@ -616,9 +616,9 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
         <BarcodeScanner 
           onScan={(text) => {
             handleBarcodeScanned(text);
-            setIsScanning(false);
           }} 
           onClose={() => setIsScanning(false)} 
+          cartCount={cart.reduce((sum, item) => sum + item.cartQuantity, 0)}
         />
       )}
     </div>
