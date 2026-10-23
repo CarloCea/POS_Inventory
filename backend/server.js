@@ -14,9 +14,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// Explicit preflight handling
-app.options('*', cors());
-
 // Fallback manual CORS headers on all requests
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
