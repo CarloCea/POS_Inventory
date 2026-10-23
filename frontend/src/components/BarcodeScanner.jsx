@@ -202,7 +202,6 @@ const BarcodeScanner = ({ onScan, onClose, cartCount }) => {
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Barcode Scanner</h3>
-              <p className="text-[11px] text-gray-500">Continuous scanning — hold barcodes to camera</p>
             </div>
           </div>
           <button 
