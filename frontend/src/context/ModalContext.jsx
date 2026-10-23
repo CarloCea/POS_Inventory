@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { AlertTriangle, CheckCircle2, AlertCircle, Info, HelpCircle, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, AlertCircle, HelpCircle, X } from 'lucide-react';
 
 const ModalContext = createContext(null);
 
