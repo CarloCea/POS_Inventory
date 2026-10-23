@@ -4,6 +4,7 @@ import { processCheckout } from '../api';
 import TransactionHistory from './TransactionHistory';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { toast } from '../context/ToastContext';
+import { modal } from '../context/ModalContext';
 
 const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
   const [cart, setCart] = useState([]);
@@ -153,9 +154,20 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
     setCart(prev => prev.filter(item => item._id !== id));
   };
 
-  const clearCart = () => {
-    setCart([]);
-    setCash('');
+  const clearCart = async () => {
+    if (cart.length === 0) return;
+    const confirmed = await modal.confirm({
+      title: 'Clear Order',
+      message: 'Are you sure you want to remove all items from this order? YES NO',
+      confirmText: 'YES',
+      cancelText: 'NO',
+      type: 'danger'
+    });
+    if (confirmed) {
+      setCart([]);
+      setCash('');
+      toast.info('Order cleared');
+    }
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.totalCost * item.cartQuantity), 0);
@@ -190,7 +202,7 @@ const POS = ({ inventory, fetchInventory, cashier, onSaleCompleted }) => {
       toast.success("Purchase completed successfully!");
     } catch (error) {
       console.error("Checkout failed", error);
-      toast.error("Checkout failed. Check stock levels or backend connection.");
+      await modal.error("Checkout failed. Check stock levels or backend connection.", "Checkout Failed");
     } finally {
       setIsProcessing(false);
     }

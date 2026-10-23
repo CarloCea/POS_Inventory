@@ -2,6 +2,7 @@ import React from 'react';
 import AdminApp from './AdminApp';
 import POSApp from './POSApp';
 import { ToastProvider } from './context/ToastContext';
+import { ModalProvider } from './context/ModalContext';
 
 const App = () => {
   const hostname = window.location.hostname;
@@ -15,7 +16,9 @@ const App = () => {
 
   return (
     <ToastProvider>
-      {isPOSDomain ? <POSApp /> : <AdminApp />}
+      <ModalProvider>
+        {isPOSDomain ? <POSApp /> : <AdminApp />}
+      </ModalProvider>
     </ToastProvider>
   );
 };

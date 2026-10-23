@@ -3,6 +3,7 @@ import { getDashboardStats, addProduct, restockProduct } from '../api';
 import { TrendingUp, AlertTriangle, DollarSign, Plus, Package, X, ShoppingCart, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, } from 'recharts';
 import { toast } from '../context/ToastContext';
+import { modal } from '../context/ModalContext';
 
 
 const Dashboard = ({ inventory = [], fetchInventory }) => {
@@ -223,10 +224,12 @@ const Dashboard = ({ inventory = [], fetchInventory }) => {
       if (fetchInventory) await fetchInventory();
       window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseModal();
-      toast.success(modalType === 'add' ? 'Product added successfully!' : 'Product restocked successfully!');
+      const msg = modalType === 'add' ? 'Product added successfully!' : 'Product restocked successfully!';
+      const title = modalType === 'add' ? 'Product Added' : 'Product Restocked';
+      await modal.success(msg, title);
     } catch (err) {
       console.error("Operation failed", err.response?.data || err);
-      toast.error(`Failed to save data. Error: ${err.response?.data?.message || err.message}`);
+      await modal.error(`Failed to save data. Error: ${err.response?.data?.message || err.message}`, 'Save Failed');
     }
   };
 

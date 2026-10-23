@@ -3,6 +3,7 @@ import { Search, Plus, Package, Edit2, Trash2, X, MinusCircle, ScanBarcode } fro
 import { addProduct, restockProduct, updateInventory, deleteProduct, addAdjustment } from '../api';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { toast } from '../context/ToastContext';
+import { modal } from '../context/ModalContext';
 
 const Inventory = ({ inventory, fetchInventory }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -310,10 +311,12 @@ const Inventory = ({ inventory, fetchInventory }) => {
       await fetchInventory();
       window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseModal();
-      toast.success(modalType === 'add' ? 'Product added successfully!' : modalType === 'restock' ? 'Stock updated successfully!' : 'Product updated successfully!');
+      const successMsg = modalType === 'add' ? 'Product added successfully!' : modalType === 'restock' ? 'Stock updated successfully!' : 'Product updated successfully!';
+      const successTitle = modalType === 'add' ? 'Product Added' : modalType === 'restock' ? 'Stock Updated' : 'Product Updated';
+      await modal.success(successMsg, successTitle);
     } catch (err) {
       console.error("Operation failed", err.response?.data || err);
-      toast.error(`Failed to save data. Error: ${err.response?.data?.message || err.message}`);
+      await modal.error(`Failed to save data. Error: ${err.response?.data?.message || err.message}`, 'Save Failed');
     }
   };
 
@@ -354,23 +357,30 @@ const Inventory = ({ inventory, fetchInventory }) => {
       await fetchInventory();
       window.dispatchEvent(new Event('inventoryUpdated'));
       handleCloseAdjModal();
-      toast.success('Adjustment logged successfully!');
+      await modal.success('Adjustment logged successfully!', 'Stock Adjusted');
     } catch (err) {
       console.error("Adjustment failed", err.response?.data || err);
-      toast.error(`Failed to log adjustment. Error: ${err.response?.data?.message || err.message}`);
+      await modal.error(`Failed to log adjustment. Error: ${err.response?.data?.message || err.message}`, 'Adjustment Failed');
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
+  const handleDelete = async (id, itemName) => {
+    const confirmed = await modal.confirm({
+      title: 'Delete Item',
+      message: `Are you sure you want to delete ${itemName ? `"${itemName}"` : 'this item'}? YES NO`,
+      confirmText: 'YES',
+      cancelText: 'NO',
+      type: 'danger'
+    });
+    if (confirmed) {
       try {
         await deleteProduct(id);
         await fetchInventory();
         window.dispatchEvent(new Event('inventoryUpdated'));
-        toast.success('Product deleted successfully');
+        await modal.success('Product deleted successfully!', 'Item Deleted');
       } catch (err) {
         console.error("Delete failed", err);
-        toast.error('Failed to delete item');
+        await modal.error('Failed to delete item.', 'Error');
       }
     }
   };
@@ -594,7 +604,7 @@ const Inventory = ({ inventory, fetchInventory }) => {
                         <button onClick={() => handleOpenModal('edit', item)} className="text-gray-400 hover:text-gray-900 transition-colors" title="Edit">
                           <Edit2 className="w-5 h-5" />
                         </button>
-                        <button onClick={() => handleDelete((item.originalItem || item)._id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Delete">
+                        <button onClick={() => handleDelete((item.originalItem || item)._id, (item.originalItem || item).name)} className="text-gray-400 hover:text-red-600 transition-colors" title="Delete">
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>

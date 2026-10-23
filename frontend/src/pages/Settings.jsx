@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Plus, User, Trash2, Edit2, X } from 'lucide-react';
 import { getUsers, createUser, updateUser, deleteUser, forgotPassword, verifyOtp, resetPassword } from '../api';
 import { toast } from '../context/ToastContext';
+import { modal } from '../context/ModalContext';
 
 const Settings = () => {
   const [settings, setSettings] = useState({
@@ -55,27 +56,34 @@ const Settings = () => {
         setNewAccount({ username: '', email: '', password: '', role: 'Cashier' });
         setShowAddAccount(false);
         fetchAccounts();
-        toast.success('Account created successfully!');
+        await modal.success('Account created successfully!', 'Account Created');
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to create account');
+        await modal.error(err.response?.data?.message || 'Failed to create account', 'Error');
       }
     } else {
-      toast.warning("Please fill in all required fields.");
+      await modal.warning("Please fill in all required fields.", "Incomplete Form");
     }
   };
 
-  const handleDeleteAccount = async (id, role) => {
+  const handleDeleteAccount = async (id, role, username) => {
     if (role === 'Administrator' && accounts.filter(a => a.role === 'Administrator').length <= 1) {
-      toast.warning("Cannot delete the last administrator account.");
+      await modal.warning("Cannot delete the last administrator account.", "Action Denied");
       return;
     }
-    if (window.confirm("Are you sure you want to delete this account?")) {
+    const confirmed = await modal.confirm({
+      title: 'Delete Account',
+      message: `Are you sure you want to delete ${username ? `account "${username}"` : 'this account'}? YES NO`,
+      confirmText: 'YES',
+      cancelText: 'NO',
+      type: 'danger'
+    });
+    if (confirmed) {
       try {
         await deleteUser(id);
         fetchAccounts();
-        toast.success('Account deleted successfully');
+        await modal.success('Account deleted successfully!', 'Account Deleted');
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to delete account');
+        await modal.error(err.response?.data?.message || 'Failed to delete account', 'Error');
       }
     }
   };
@@ -98,9 +106,9 @@ const Settings = () => {
       setShowEditAccount(false);
       setEditingAccount(null);
       fetchAccounts();
-      toast.success("Account details updated successfully.");
+      await modal.success("Account details updated successfully.", "Account Updated");
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update account');
+      await modal.error(err.response?.data?.message || 'Failed to update account', "Update Failed");
     }
   };
 
@@ -297,7 +305,7 @@ const Settings = () => {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteAccount(acc._id, acc.role); }}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteAccount(acc._id, acc.role, acc.username); }}
                     className="text-gray-500 hover:text-red-600 p-2 hover:bg-red-50 rounded-md"
                     title="Delete Account"
                   >
